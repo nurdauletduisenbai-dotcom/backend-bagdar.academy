@@ -1,0 +1,6 @@
+{
+  "name": "EduPlatform REST API Studio",
+  "description": "Серверная часть образовательной платформы: видеоуроки YouTube, тесты, курсы, многоарендность, 2FA, ротация токенов, Celery и PostgreSQL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

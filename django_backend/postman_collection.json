@@ -1,0 +1,124 @@
+{
+  "info": {
+    "name": "Django REST Framework + SimpleJWT API",
+    "description": "Готовая коллекция запросов для тестирования регистрации, авторизации JWT, обновления токенов и CRUD операций.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Регистрация",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"testuser\",\n  \"password\": \"SuperPassword123!\",\n  \"password_confirm\": \"SuperPassword123!\",\n  \"bio\": \"Разработчик на Python\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/api/v1/auth/register/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register", ""]}
+      }
+    },
+    {
+      "name": "Auth - Логин (Получение JWT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.access);",
+              "    pm.collectionVariables.set('refreshToken', jsonData.refresh);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SuperPassword123!\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/api/v1/auth/token/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "token", ""]}
+      }
+    },
+    {
+      "name": "Auth - Обновление токена (Refresh)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/api/v1/auth/token/refresh/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "token", "refresh", ""]}
+      }
+    },
+    {
+      "name": "Auth - Профиль пользователя (Защищенный)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "url": {"raw": "{{baseUrl}}/api/v1/auth/profile/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "profile", ""]}
+      }
+    },
+    {
+      "name": "Articles - Список статей",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{baseUrl}}/api/v1/articles/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "articles", ""]}
+      }
+    },
+    {
+      "name": "Articles - Создать статью (Защищенный)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Моя первая статья в DRF\",\n  \"content\": \"Текст публикации с поддержкой JWT авторизации.\",\n  \"status\": \"PUBLISHED\",\n  \"tags\": \"drf,django,jwt\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/api/v1/articles/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "articles", ""]}
+      }
+    },
+    {
+      "name": "Auth - Выход (Blacklist токена)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/api/v1/auth/logout/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout", ""]}
+      }
+    }
+  ]
+}

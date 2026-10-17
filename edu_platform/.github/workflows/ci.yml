@@ -1,0 +1,53 @@
+name: EduPlatform CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: edu_platform_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Ruff Linter
+        run: ruff check .
+
+      - name: Run Pytest Test Suite
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/edu_platform_db
+          REDIS_URL: redis://localhost:6379/0
+          DJANGO_SECRET_KEY: test-key-for-github-actions-ci-12345
+        run: pytest --ds=config.settings.dev -v --cov=apps

@@ -80,13 +80,26 @@ ASGI_APPLICATION = 'backend.asgi.application'
 
 # Database
 # Default to SQLite for easy local development, or PostgreSQL via env
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': BASE_DIR / 'db.sqlite3' if 'sqlite3' in os.getenv('DB_ENGINE', 'django.db.backends.sqlite3') else os.getenv('DB_NAME', 'django_jwt_db'),
-    }
-}
+DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
 
+if 'sqlite3' in DB_ENGINE:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.getenv('DB_NAME', 'django_jwt_db'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DB_HOST', 'db'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 

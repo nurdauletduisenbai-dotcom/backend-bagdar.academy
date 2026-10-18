@@ -1,21 +1,49 @@
-.PHONY: up down migrate test lint seed
+.PHONY: env up down restart logs ps shell migrations migrate seed test lint typecheck front-build
 
-up:
-	docker compose up -d --build
+DC = docker compose
+BACKEND = $(DC) exec backend
+
+# ---------- Docker ----------
+env:            ## создать .env из шаблона (если его ещё нет)
+	@test -f .env || cp .env.example .env
+
+up: env         ## поднять всё: db, redis, backend, worker, frontend, mailhog
+	$(DC) up -d --build
 
 down:
-	docker compose down
+	$(DC) down
+
+restart:
+	$(DC) restart backend worker frontend
+
+logs:
+	$(DC) logs -f --tail=100
+
+ps:
+	$(DC) ps
+
+shell:          ## Django shell внутри контейнера
+	$(BACKEND) python manage.py shell
+
+# ---------- Backend (выполняется в контейнере backend) ----------
+migrations:
+	$(BACKEND) python manage.py makemigrations
 
 migrate:
-	python manage.py makemigrations accounts organizations courses content videos questions assessments assignments schedule progress notifications payments audit common
-	python manage.py migrate
-
-test:
-	pytest --ds=config.settings.dev -v
-
-lint:
-	ruff check .
-	mypy .
+	$(BACKEND) python manage.py migrate
 
 seed:
-	python seed_data.py
+	$(BACKEND) python seed_data.py
+
+test:
+	$(BACKEND) pytest -v
+
+lint:
+	$(BACKEND) ruff check .
+
+typecheck:
+	$(BACKEND) mypy .
+
+# ---------- Frontend ----------
+front-build:
+	$(DC) exec frontend npm run build

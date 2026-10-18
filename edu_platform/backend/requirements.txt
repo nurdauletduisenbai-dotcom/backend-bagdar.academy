@@ -1,0 +1,27 @@
+# Python 3.12 & Django 5 Core
+Django>=5.0.0,<5.2.0
+djangorestframework>=3.15.0
+djangorestframework-simplejwt>=5.3.1
+django-cors-headers>=4.3.1
+django-filter>=24.1
+django-environ>=0.11.2
+django-storages>=1.14.2
+
+# Password Hashing & Cryptography (Argon2id & 2FA)
+argon2-cffi>=23.1.0
+cryptography>=42.0.5
+pyotp>=2.9.0
+qrcode>=7.4.2
+
+# Async & Task Queue
+celery>=5.3.6
+redis>=5.0.3
+
+# API Documentation (OpenAPI 3.0 / Swagger on /docs)
+drf-spectacular>=0.27.1
+
+# Production WSGI / ASGI
+gunicorn>=21.2.0
+uvicorn>=0.29.0
+psycopg2-binary>=2.9.9
+Pillow>=10.2.0

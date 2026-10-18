@@ -1,0 +1,13 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["**/migrations/**"]
+
+[lint]
+# Базовые ошибки (pycodestyle/pyflakes) + сортировка импортов
+select = ["E4", "E7", "E9", "F", "I"]
+
+[lint.per-file-ignores]
+# Настройки Django наследуются через `from .base import *`
+"config/settings/*.py" = ["F403", "F405"]
+# django.setup() должен выполниться до импорта моделей
+"seed_data.py" = ["E402"]

@@ -4,81 +4,95 @@
 
 ---
 
-## 1. Быстрый старт через Docker Compose
+## 1. Структура
 
-```bash
-# 1. Склонируйте репозиторий и перейдите в каталог
-cd edu_platform
-
-# 2. Скопируйте файл переменных окружения
-cp .env.example .env
-
-# 3. Запустите все сервисы одной командой (API, PostgreSQL 16, Redis, MinIO, Celery, MailHog)
-make up
-
-# 4. Примените миграции и наполните базу демонстрационными данными
-docker compose exec api python manage.py migrate
-docker compose exec api python seed_data.py
+```text
+edu_platform/
+├── backend/             # Django 5 + DRF (Python 3.12)
+│   ├── config/          # settings (base, dev, test, prod), urls, celery, wsgi/asgi
+│   ├── apps/            # доменные приложения (см. ниже)
+│   ├── tests/           # pytest-django
+│   ├── docker/          # entrypoint.sh
+│   ├── Dockerfile       # стадии dev / prod
+│   ├── requirements.txt / requirements-dev.txt
+│   └── seed_data.py     # демо-данные
+├── frontend/            # Vue 3 + Vite + TypeScript + Pinia + Vue Router
+│   ├── src/api/         # axios-клиент (JWT + авто-refresh), запросы к API
+│   ├── src/stores/      # Pinia (auth)
+│   ├── src/views/       # страницы
+│   ├── Dockerfile       # стадии dev (Vite) / prod (nginx)
+│   └── CLAUDE.md        # правила для разработки фронтенда через Claude Code
+├── docker-compose.yml   # db, redis, backend, worker, frontend, mailhog
+├── .env.example         # общий шаблон переменных окружения
+└── Makefile             # make up / down / logs / migrate / seed / test / lint
 ```
 
-Сервисы будут доступны по адресам:
-- **REST API & Документация Swagger (OpenAPI 3.0):** [http://localhost:8000/docs/](http://localhost:8000/docs/)
-- **Альтернативная документация ReDoc:** [http://localhost:8000/redoc/](http://localhost:8000/redoc/)
-- **Health check:** `http://localhost:8000/health/`
-- **MailHog (Тестирование писем):** [http://localhost:8025/](http://localhost:8025/)
-- **MinIO S3 Web Console:** [http://localhost:9001/](http://localhost:9001/) (логин: `minioadmin` / пароль: `minioadmin`)
+Приложения бэкенда (`backend/apps/`):
 
-Демо-пользователи (создаются скриптом `seed_data.py`):
+| Приложение | Назначение |
+|---|---|
+| `common` | middleware (X-Request-ID, X-Org-ID), permissions, exceptions, pagination, soft delete |
+| `accounts` | User (email-логин), refresh-сессии, email-токены, 2FA, Argon2 |
+| `organizations` | организации, членство и роли, инвайты |
+| `courses` | курсы, группы, записи на курс |
+| `content` | разделы, уроки, материалы, комментарии |
+| `videos` | YouTube-видео, защищённый play, прогресс |
+| `questions` | темы и банк вопросов |
+| `assessments` | тесты, попытки, автопроверка, античит |
+| `assignments`, `schedule`, `progress`, `notifications`, `payments`, `audit` | пока только модели |
+
+---
+
+## 2. Запуск через Docker (рекомендуется)
+
+```bash
+cd edu_platform
+make up          # = cp .env.example .env (если нет) + docker compose up -d --build
+make seed        # демо-данные
+make logs        # логи всех сервисов
+```
+
+Миграции применяются автоматически при старте контейнера `backend`.
+
+| Сервис | Адрес |
+|---|---|
+| Frontend (Vue, HMR) | http://localhost:5173 |
+| API + Swagger | http://localhost:8000/docs/ |
+| ReDoc | http://localhost:8000/redoc/ |
+| Health / Ready | http://localhost:8000/health/, `/ready/` |
+| MailHog (письма) | http://localhost:8025 |
+| PostgreSQL 16 | `localhost:5432` (postgres / postgres) |
+
+Фронтенд обращается к `/api/...` на своём же адресе, Vite проксирует запросы на Django. Поэтому CORS не нужен, а refresh-cookie работает.
+
+Демо-пользователи (после `make seed`):
 - **Администратор:** `admin@fizmat.kz` / `AdminPassword123!`
 - **Учитель:** `teacher@fizmat.kz` / `TeacherPassword123!`
-- **Ученик 1:** `student1@fizmat.kz` / `StudentPassword123!`
-- **Ученик 2:** `student2@fizmat.kz` / `StudentPassword123!`
+- **Ученик:** `student1@fizmat.kz` / `StudentPassword123!`
 - **Родитель:** `parent@fizmat.kz` / `ParentPassword123!`
 
 ---
 
-## 2. Локальный запуск без Docker
+## 3. Запуск без Docker
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate
-python seed_data.py
+cd edu_platform && cp .env.example .env     # Postgres и Redis должны быть запущены локально
+
+# backend
+cd backend
+python3.12 -m venv venv && source venv/bin/activate
+pip install -r requirements-dev.txt
+python manage.py migrate && python seed_data.py
 python manage.py runserver
+
+# frontend (в другом терминале)
+cd edu_platform/frontend
+npm install
+npm run dev
 ```
 
----
-
-## 3. Архитектура проекта
-
-Слоистая структура с четким разделением ответственности:
-
-```text
-edu_platform/
-├── config/              # Конфигурация Django (base, dev, prod), urls, celery, wsgi, asgi
-├── apps/
-│   ├── common/          # Middleware (X-Request-ID, изоляция org_id), permissions, exceptions, pagination
-│   ├── accounts/        # Кастомный User (AbstractBaseUser), сессии RefreshToken, EmailToken, 2FA, Argon2
-│   ├── organizations/   # Организации, членство OrgMembership, инвайты Invite
-│   ├── courses/         # Курсы (school_subject, exam_prep, club), группы, записи Enrollment
-│   ├── content/         # Разделы Section, уроки Lesson, материалы S3, комментарии
-│   ├── videos/          # YouTube видеоуроки, защищенный шлюз play, прогресс с порогом 90%
-│   ├── questions/       # Дерево тем, банк вопросов (single, multi, short, number, match, open), LaTeX/Markdown
-│   ├── assessments/     # Тесты, режимы, попытки, автопроверка закрытых вопросов, таймер, античит
-│   ├── assignments/     # Домашние задания, сдача работ, оценки и отзывы учителей
-│   ├── schedule/        # Расписание занятий групп, посещаемость
-│   ├── progress/        # Аналитика успеваемости для ученика, родителя, учителя и админа
-│   ├── notifications/   # Объявления, уведомления, асинхронные Celery-задачи отправки писем
-│   ├── payments/        # Заказы, шлюзы Kaspi / Stripe, вебхуки, автозачисление
-│   └── audit/           # Журнал аудита критических действий, соответствие GDPR
-├── tests/               # Pytest-django тесты аутентификации, прав доступа и тестов
-├── seed_data.py         # Скрипт генерации тестовых данных
-├── Dockerfile           # Multi-stage сборка на базе python:3.12-slim
-├── docker-compose.yml   # Оркестрация api, db, redis, worker, minio, mailhog
-└── Makefile             # Удобные шорткаты: up, down, migrate, test, lint, seed
-```
+Тесты бэкенда не требуют Redis (`config.settings.test` использует locmem-кэш):
+`cd backend && pytest`.
 
 ---
 

@@ -25,3 +25,9 @@ REST_FRAMEWORK = {
     **REST_FRAMEWORK,
     'DEFAULT_THROTTLE_RATES': {'auth': '10000/min', 'auth_refresh': '10000/min'},
 }
+
+# Загруженные в тестах файлы — во временный каталог
+import tempfile  # noqa: E402
+
+MEDIA_ROOT = tempfile.mkdtemp(prefix='edu-test-media-')
+FEATURE_PAYMENTS_ENABLED = True

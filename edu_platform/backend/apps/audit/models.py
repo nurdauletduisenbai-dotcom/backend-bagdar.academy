@@ -14,6 +14,10 @@ class AuditLog(models.Model):
         COURSE_DELETE = 'course_delete', 'Удаление курса'
         GRADE_CHANGE = 'grade_change', 'Изменение оценки'
         PERSONAL_DATA_ACCESS = 'personal_data_access', 'Доступ к персональным данным'
+        PAYMENT_PAID = 'payment_paid', 'Оплата заказа'
+        PAYMENT_REFUND = 'payment_refund', 'Возврат оплаты'
+        MEMBER_DEACTIVATE = 'member_deactivate', 'Отключение участника'
+        PASSWORD_RESET = 'password_reset', 'Сброс пароля'
 
     org = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True, related_name='audit_logs')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)

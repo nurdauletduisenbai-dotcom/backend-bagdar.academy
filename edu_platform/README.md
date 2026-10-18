@@ -22,15 +22,35 @@ edu_platform/
 │   ├── src/views/       # страницы
 │   ├── Dockerfile       # стадии dev (Vite) / prod (nginx)
 │   └── CLAUDE.md        # правила для разработки фронтенда через Claude Code
-├── docker-compose.yml   # db, redis, backend, worker, frontend, mailhog
+├── docker-compose.yml   # db, redis, backend, worker, beat, frontend, mailhog
 ├── .env.example         # общий шаблон переменных окружения
 └── Makefile             # make up / down / logs / migrate / seed / test / lint
 ```
 
 Приложения бэкенда (`backend/apps/`):
 
-| Приложение | Назначение |
-|---|---|
+| Приложение | Назначение | API (`/api/v1/...`) |
+|---|---|---|
+| `common` | tenancy (X-Org-ID), JWT-аутентификация, базовые ViewSet, права, файлы, ошибки | — |
+| `accounts` | пользователи, вход/refresh/сессии, 2FA, сброс пароля, родитель ↔ ученик | `auth/`, `parents/` |
+| `organizations` | организации, участники и роли, приглашения | `orgs/` |
+| `courses` | курсы, записи учеников, правила доступа (`access.py`) | `courses/` |
+| `content` | разделы, уроки, материалы (файлы), комментарии | `sections/`, `lessons/`, `materials/`, `comments/` |
+| `videos` | YouTube-видео, защищённый play, прогресс просмотра | `videos/` |
+| `questions` | темы и банк вопросов организации | `topics/`, `questions/` |
+| `assessments` | конструктор тестов, попытки, автопроверка, античит, статистика | `tests/` |
+| `assignments` | домашние задания, сдача (текст/файл), проверка, напоминания | `assignments/`, `submissions/` |
+| `schedule` | группы, занятия, посещаемость, напоминания | `groups/`, `sessions/`, `attendance/` |
+| `progress` | прогресс по урокам/курсам, отчёты родителю и учителю, сводка админа | `progress/` |
+| `notifications` | уведомления, настройки, объявления, письма (Celery) | `notifications/`, `announcements/` |
+| `payments` | заказы, manual/Stripe, вебхук, автозачисление, возвраты | `payments/` |
+| `audit` | журнал аудита организации | `audit/` |
+
+Полный список эндпоинтов с примерами запросов — в Swagger: http://localhost:8000/docs/
+
+Периодические задачи (сервис `beat`): напоминания о дедлайнах заданий (раз в час) и о занятиях (за 30 минут).
+
+---|---|
 | `common` | middleware (X-Request-ID, X-Org-ID), permissions, exceptions, pagination, soft delete |
 | `accounts` | User (email-логин), refresh-сессии, email-токены, 2FA, Argon2 |
 | `organizations` | организации, членство и роли, инвайты |

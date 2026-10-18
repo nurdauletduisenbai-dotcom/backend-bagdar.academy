@@ -282,7 +282,24 @@ class AssessmentService:
         else:
             attempt.status = TestAttempt.Status.SUBMITTED if has_open else TestAttempt.Status.GRADED
         attempt.save()
+        cls.after_result_changed(attempt)
         return attempt
+
+    @classmethod
+    def after_result_changed(cls, attempt: TestAttempt):
+        """Пересчёт прогресса курса и уведомление ученика о результате."""
+        from apps.notifications.services import NotificationService
+        from apps.progress.services import ProgressService
+
+        ProgressService.recalculate(attempt.student, attempt.test.course)
+        if attempt.status in (TestAttempt.Status.GRADED, TestAttempt.Status.EXPIRED):
+            NotificationService.notify(
+                [attempt.student], NotificationService.Type.TEST_RESULT,
+                title=f'Результат теста «{attempt.test.title}»',
+                message=f'{attempt.score:g} из {attempt.max_score:g} ({attempt.score_pct}%).'
+                        + (' Тест пройден.' if attempt.is_passed else ''),
+                metadata={'test_id': attempt.test_id, 'attempt_id': attempt.id},
+            )
 
     @classmethod
     def submit_attempt(cls, attempt: TestAttempt) -> TestAttempt:
@@ -318,6 +335,7 @@ class AssessmentService:
         if attempt.status == TestAttempt.Status.SUBMITTED and not pending_open.exists():
             attempt.status = TestAttempt.Status.GRADED
         attempt.save()
+        cls.after_result_changed(attempt)
         return attempt
 
     # ---------- Результаты ----------
@@ -369,3 +387,57 @@ class AssessmentService:
             })
         data['review'] = review
         return data
+
+
+class TestBuilderService:
+    @classmethod
+    def ensure_editable(cls, test: Test):
+        """Состав теста нельзя менять, когда уже есть сданные попытки — иначе результаты станут несопоставимы."""
+        if test.attempts.filter(status__in=FINISHED_STATUSES).exists():
+            raise ValidationError('По тесту уже есть сданные попытки — создайте новый тест или копию.')
+
+    @classmethod
+    def add_question(cls, test: Test, question: Question, points: float, order: int | None = None) -> TestQuestion:
+        cls.ensure_editable(test)
+        if question.topic.org_id != test.course.org_id:
+            raise ValidationError({'question_id': 'Вопрос из банка другой организации.'})
+        if question.is_archived:
+            raise ValidationError({'question_id': 'Вопрос в архиве.'})
+        if order is None:
+            order = (test.test_questions.order_by('-order').values_list('order', flat=True).first() or 0) + 1
+        tq, created = TestQuestion.objects.get_or_create(
+            test=test, question=question, defaults={'points': points, 'order': order}
+        )
+        if not created:
+            raise ValidationError({'question_id': 'Вопрос уже есть в тесте.'})
+        return tq
+
+    @classmethod
+    def stats(cls, test: Test) -> dict:
+        from django.db.models import Avg, Count
+
+        finished = test.attempts.filter(status__in=FINISHED_STATUSES)
+        agg = finished.aggregate(avg_pct=Avg('score_pct'), n=Count('id'), students=Count('student', distinct=True))
+        passed = finished.filter(is_passed=True).count()
+
+        per_question = []
+        for tq in test.test_questions.select_related('question').order_by('order', 'id'):
+            answers = AttemptAnswer.objects.filter(attempt__in=finished, question=tq.question)
+            total = answers.count()
+            correct = answers.filter(is_correct=True).count()
+            per_question.append({
+                'question_id': tq.question_id,
+                'text': tq.question.text[:120],
+                'type': tq.question.type,
+                'answered': total,
+                'correct_pct': round(correct / total * 100, 1) if total else None,
+            })
+        return {
+            'test_id': test.id,
+            'attempts': agg['n'] or 0,
+            'students': agg['students'] or 0,
+            'average_score_pct': round(agg['avg_pct'] or 0.0, 1),
+            'pass_rate_pct': round(passed / agg['n'] * 100, 1) if agg['n'] else 0.0,
+            'anti_cheat_events': AttemptEventLog.objects.filter(attempt__test=test).count(),
+            'questions': per_question,
+        }

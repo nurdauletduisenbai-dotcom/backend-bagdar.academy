@@ -25,7 +25,7 @@ from django.utils import timezone
 from apps.accounts.models import ParentStudentRelation, User
 from apps.assessments.models import Test, TestQuestion
 from apps.content.models import Lesson, Section
-from apps.courses.models import Course, Enrollment, Group
+from apps.courses.models import Course, CourseStaff, Enrollment, Group
 from apps.organizations.models import Organization, OrgMembership
 from apps.questions.models import Question, QuestionOption, Topic
 from apps.videos.models import Video
@@ -160,6 +160,9 @@ def run_seed():
             'created_by': teacher_user,
         }
     )
+    # Учитель — преподаватель всех демо-курсов (иначе не сможет ими управлять)
+    for course in (c1, c2, c3):
+        CourseStaff.objects.get_or_create(course=course, teacher=teacher_user)
     print("✓ 3 Курса созданы: Школьный предмет, Подготовка к экзаменам, Кружок.")
 
     # 4. Группа и запись ученика 1

@@ -24,6 +24,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             'subject',
             'grade_level',
             'price',
+            'access_days',
             'status',
             'is_free_preview_enabled',
             'created_at',

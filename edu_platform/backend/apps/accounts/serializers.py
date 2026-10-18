@@ -1,7 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import RefreshToken, User
+from .models import ParentStudentRelation, RefreshToken, User
 from .services import hash_token
 
 # ---------- Запросы ----------
@@ -136,3 +136,35 @@ class SessionSerializer(serializers.ModelSerializer):
     def get_is_current(self, obj) -> bool:
         raw = self.context.get('current_refresh')
         return bool(raw) and obj.token_hash == hash_token(raw)
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+
+
+class ParentLinkRequestSerializer(serializers.Serializer):
+    student_email = serializers.EmailField()
+
+
+class ParentRelationSerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+    student = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ParentStudentRelation
+        fields = ('id', 'parent', 'student', 'is_confirmed', 'created_at')
+        read_only_fields = fields
+
+    def _brief(self, user) -> dict:
+        return {'id': user.id, 'email': user.email, 'full_name': user.get_full_name()}
+
+    def get_parent(self, obj) -> dict:
+        return self._brief(obj.parent)
+
+    def get_student(self, obj) -> dict:
+        return self._brief(obj.student)

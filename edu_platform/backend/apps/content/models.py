@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 
+from apps.common.files import upload_to
 from apps.common.models import SoftDeletableModel, TimeStampedModel
 from apps.courses.models import Course
 
@@ -43,7 +44,9 @@ class Lesson(SoftDeletableModel):
 class Material(TimeStampedModel):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='materials')
     title = models.CharField(max_length=255)
-    file_url = models.URLField()
+    # Либо загруженный файл (отдаётся только через API с проверкой прав), либо внешняя ссылка
+    file = models.FileField(upload_to=upload_to('materials'), blank=True)
+    file_url = models.URLField(blank=True)
     file_type = models.CharField(max_length=50, blank=True)
     file_size_bytes = models.BigIntegerField(default=0)
     order = models.PositiveIntegerField(default=1)
@@ -51,7 +54,7 @@ class Material(TimeStampedModel):
     class Meta:
         db_table = 'materials'
         ordering = ['order']
-        verbose_name = 'Учебный материал (S3)'
+        verbose_name = 'Учебный материал'
 
 
 class Comment(TimeStampedModel):

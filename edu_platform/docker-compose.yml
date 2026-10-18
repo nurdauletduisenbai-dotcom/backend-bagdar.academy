@@ -85,6 +85,23 @@ services:
       backend:
         condition: service_healthy
 
+  beat:
+    build:
+      context: ./backend
+      target: dev
+    container_name: edu_beat
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *backend-env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend

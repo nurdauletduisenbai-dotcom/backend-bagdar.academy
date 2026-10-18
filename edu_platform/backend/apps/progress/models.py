@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.db import models
 
 from apps.common.models import TimeStampedModel
+from apps.content.models import Lesson
 from apps.courses.models import Enrollment
 
 
@@ -14,3 +16,15 @@ class CourseProgress(TimeStampedModel):
     class Meta:
         db_table = 'course_progress'
         verbose_name = 'Прогресс прохождения курса'
+
+
+class LessonProgress(TimeStampedModel):
+    """Урок пройден: вручную (кнопка «Пройдено») или автоматически, когда просмотрены все его видео."""
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='completions')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_completions')
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'lesson_progress'
+        unique_together = ('lesson', 'student')
+        verbose_name = 'Пройденный урок'

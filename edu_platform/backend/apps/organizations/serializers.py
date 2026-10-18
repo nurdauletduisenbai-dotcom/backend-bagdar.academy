@@ -51,3 +51,34 @@ class InviteCreatedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invite
         fields = ('id', 'role', 'course', 'group', 'max_uses', 'used_count', 'expires_at', 'invite_token')
+
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ('id', 'name', 'slug', 'logo_url', 'timezone', 'is_active', 'created_at')
+        read_only_fields = ('id', 'slug', 'is_active', 'created_at')
+
+
+class MemberSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email', read_only=True)
+    full_name = serializers.CharField(source='user.get_full_name', read_only=True)
+
+    class Meta:
+        model = OrgMembership
+        fields = ('id', 'user', 'email', 'full_name', 'role', 'is_active', 'created_at')
+        read_only_fields = ('id', 'user', 'email', 'full_name', 'created_at')
+
+
+class AddMemberSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    role = serializers.ChoiceField(choices=OrgMembership.Role.choices)
+
+
+class InviteListSerializer(serializers.ModelSerializer):
+    is_valid = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Invite
+        fields = ('id', 'role', 'course', 'group', 'max_uses', 'used_count', 'expires_at', 'is_valid', 'created_at')
+        read_only_fields = fields

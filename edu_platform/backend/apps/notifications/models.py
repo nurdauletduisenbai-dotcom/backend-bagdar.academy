@@ -27,6 +27,10 @@ class Notification(TimeStampedModel):
         TEST_RESULT = 'test_result', 'Результат теста'
         SESSION_START = 'session_start', 'Начало занятия'
         COMMENT_REPLY = 'comment_reply', 'Ответ на комментарий'
+        ANNOUNCEMENT = 'announcement', 'Объявление'
+        PAYMENT = 'payment', 'Оплата'
+        ENROLLMENT = 'enrollment', 'Запись на курс'
+        PARENT_LINK = 'parent_link', 'Запрос родителя'
         SYSTEM = 'system', 'Системное уведомление'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
@@ -39,6 +43,7 @@ class Notification(TimeStampedModel):
     class Meta:
         db_table = 'notifications'
         ordering = ['-created_at']
+        indexes = [models.Index(fields=['user', 'is_read'])]
         verbose_name = 'Уведомление'
 
 

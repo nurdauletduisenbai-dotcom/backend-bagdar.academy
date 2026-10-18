@@ -9,12 +9,18 @@ http://localhost:8000/docs/ (JSON-схема: http://localhost:8000/api/schema/)
 student1@fizmat.kz / StudentPassword123!, parent@fizmat.kz / ParentPassword123!.
 
 ## Структура `src/`
-- `api/http.ts`: единственный axios-инстанс. Добавляет `Authorization: Bearer` и `X-Org-ID`, при 401 один раз вызывает `/auth/refresh/` и повторяет запрос. Не создавай другие axios-инстансы.
-- `api/<домен>.ts`: функции запросов по доменам (`authApi`, `coursesApi`, …). Компоненты не вызывают `http` напрямую.
+- `api/http.ts`: единственный axios-инстанс. Добавляет `Authorization: Bearer` и `X-Org-ID`, при 401 один раз вызывает `/auth/refresh/` и повторяет запрос. Тут же `downloadFile()` (защищённые файлы) и `toFormData()` (загрузка). Не создавай другие axios-инстансы.
+- `api/<домен>.ts`: запросы по доменам (`authApi`, `coursesApi`, `lessonsApi`, `testsApi`, `assignmentsApi`, `sessionsApi`, `paymentsApi`, `progressApi`, `orgsApi`…). Компоненты не вызывают `http` напрямую.
 - `types/api.ts`: типы ответов API. Сверяй их с сериализаторами в `../backend/apps/*/serializers.py`.
-- `stores/`: Pinia, setup-синтаксис (`defineStore('id', () => {...})`).
-- `views/`: страницы (подключаются в `router/index.ts` через lazy `import()`), `components/`: переиспользуемые части.
-- `assets/main.css`: CSS-переменные (`--bg`, `--surface`, `--text`, `--primary` …) с тёмной темой. Используй их, а не хардкод цветов.
+- `stores/`: Pinia, setup-синтаксис. `auth` — пользователь, роли в текущей организации (`hasRole`, `isAdmin`, `isTeacher`, `isStaff`, `isStudent`, `isParent`), `switchOrg()`. `toast` — уведомления на экране. `notifications` — счётчик непрочитанных (опрос раз в 30 с).
+- `composables/useAsync.ts`: `useAsync(fn)` — загрузка с `loading/error/data/run`; `useAction()` — `act(fn, 'Успех')` для кнопок (блокировка повторного нажатия + тосты).
+- `composables/useYouTubeProgress.ts`: отправка прогресса просмотра видео через YouTube IFrame API.
+- `layouts/AppLayout.vue` + `layouts/navigation.ts`: боковое меню, пункты фильтруются по ролям.
+- `router/index.ts`: `meta.public`, `meta.roles` — доступ к страницам по ролям.
+- `components/ui/`: `AppModal`, `AppPager`, `AppBadge`, `StateBlock` (загрузка/ошибка/пусто), `PageHeader`, `ProgressBar`, `ToastHost`, `MathText` (формулы `$…$` через KaTeX).
+- `views/`: `auth/`, `courses/`, `tests/`, `assignments/`, `progress/`, `teach/` (учитель), `admin/`; общие страницы — в корне.
+- `demo.ts`: демо-аккаунты для кнопок быстрого входа (`VITE_SHOW_DEMO_ACCOUNTS=false` — скрыть).
+- `assets/main.css`: дизайн-токены (CSS-переменные) и базовые классы (`card`, `btn`, `table`, `form`, `grid`, `badge`, `alert`, `tabs`). Новый дизайн начинай с замены токенов.
 
 ## Правила
 - Импорты через алиас `@/` (это `src/`).

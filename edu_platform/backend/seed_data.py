@@ -308,7 +308,118 @@ def run_seed():
         TestQuestion.objects.get_or_create(test=test1, question=q, defaults={'order': idx, 'points': 1.0})
 
     print("✓ Тест с вопросами успешно сформирован.")
+
+    seed_role_demo(org, admin_user, teacher_user, student1, student2, parent_user, c1, c2, c3, group1,
+                   lesson1, lesson2, topic)
     print("\n🎉 Все демонстрационные данные успешно загружены!")
+    print_demo_accounts()
+
+
+DEMO_ACCOUNTS = [
+    ('Администратор', 'admin@fizmat.kz', 'AdminPassword123!'),
+    ('Учитель', 'teacher@fizmat.kz', 'TeacherPassword123!'),
+    ('Куратор', 'curator@fizmat.kz', 'CuratorPassword123!'),
+    ('Ученик', 'student1@fizmat.kz', 'StudentPassword123!'),
+    ('Ученик 2', 'student2@fizmat.kz', 'StudentPassword123!'),
+    ('Родитель', 'parent@fizmat.kz', 'ParentPassword123!'),
+    ('Две школы', 'multi@fizmat.kz', 'MultiPassword123!'),
+    ('Админ Школы №2', 'admin@school2.kz', 'School2Password123!'),
+    ('Django admin (/admin/)', 'superadmin@edu.local', 'SuperAdminPassword123!'),
+]
+
+
+def print_demo_accounts():
+    print("\nДемо-аккаунты:")
+    for role, email, password in DEMO_ACCOUNTS:
+        print(f"  {role:<24} {email:<24} {password}")
+
+
+def _user(email, password, first, last, **extra):
+    user, _ = User.objects.get_or_create(email=email, defaults={'first_name': first, 'last_name': last,
+                                                                'is_verified': True, **extra})
+    user.set_password(password)
+    for key, value in extra.items():
+        setattr(user, key, value)
+    user.save()
+    return user
+
+
+def seed_role_demo(org, admin_user, teacher_user, student1, student2, parent_user, c1, c2, c3, group1,
+                   lesson1, lesson2, topic):
+    """Данные, чтобы каждую роль можно было сразу проверить руками."""
+    from apps.assignments.models import Assignment, AssignmentSubmission
+    from apps.notifications.models import Announcement
+    from apps.payments.models import Order
+    from apps.schedule.models import Session
+
+    now = timezone.now()
+
+    # Админ школы — не суперпользователь, чтобы видеть ровно права роли «admin».
+    admin_user.is_superuser = False
+    admin_user.is_staff = False
+    admin_user.save(update_fields=['is_superuser', 'is_staff'])
+    _user('superadmin@edu.local', 'SuperAdminPassword123!', 'Супер', 'Админ', is_staff=True, is_superuser=True)
+
+    curator = _user('curator@fizmat.kz', 'CuratorPassword123!', 'Мадина', 'Кураторова')
+    OrgMembership.objects.get_or_create(org=org, user=curator, role='curator')
+
+    # Вторая школа: изоляция данных + пользователь в двух организациях
+    school2, _ = Organization.objects.get_or_create(slug='school-2', defaults={'name': 'Школа №2', 'timezone': 'Asia/Almaty'})
+    admin2 = _user('admin@school2.kz', 'School2Password123!', 'Ерлан', 'Директоров')
+    OrgMembership.objects.get_or_create(org=school2, user=admin2, role='admin')
+    multi = _user('multi@fizmat.kz', 'MultiPassword123!', 'Тимур', 'Двухшкольный')
+    OrgMembership.objects.get_or_create(org=org, user=multi, role='student')
+    OrgMembership.objects.get_or_create(org=school2, user=multi, role='teacher')
+    s2course, _ = Course.objects.get_or_create(org=school2, slug='chemistry-9', defaults={
+        'title': 'Химия 9 класс (Школа №2)', 'type': Course.CourseType.SCHOOL_SUBJECT, 'subject': 'Химия',
+        'grade_level': 9, 'status': Course.Status.PUBLISHED, 'created_by': admin2,
+    })
+    CourseStaff.objects.get_or_create(course=s2course, teacher=multi)
+    s2section, _ = Section.objects.get_or_create(course=s2course, title='Раздел 1: Строение атома', order=1)
+    Lesson.objects.get_or_create(section=s2section, title='Периодическая таблица', defaults={'order': 1})
+    Enrollment.objects.get_or_create(course=c1, student=multi, defaults={
+        'group': group1, 'status': Enrollment.Status.ACTIVE, 'access_until': now + timedelta(days=180)})
+
+    # Ученик 2 записан на кружок; ЕНТ-физику можно купить; висит заказ на подтверждение админом
+    Enrollment.objects.get_or_create(course=c3, student=student2, defaults={
+        'status': Enrollment.Status.ACTIVE, 'access_until': now + timedelta(days=90)})
+    Order.objects.get_or_create(idempotency_key='demo-pending-order', defaults={
+        'user': student2, 'course': c2, 'amount': c2.price, 'provider': Order.Provider.MANUAL})
+
+    # Расписание группы 10 «А» на ближайшие дни
+    for day, (title, hour, url) in enumerate([
+        ('Тригонометрический круг', 15, 'https://meet.google.com/demo-edu-1'),
+        ('Формулы приведения', 16, ''),
+        ('Контрольная работа', 15, ''),
+    ], start=1):
+        start = (now + timedelta(days=day)).replace(hour=hour, minute=0, second=0, microsecond=0)
+        Session.objects.get_or_create(group=group1, title=title, defaults={
+            'start_time': start, 'end_time': start + timedelta(minutes=90),
+            'location': 'Каб. 204', 'online_meeting_url': url or None, 'lesson': lesson1})
+
+    # Задания: одно сдано и ждёт проверки, одно открыто
+    hw1, _ = Assignment.objects.get_or_create(lesson=lesson1, title='Задачи на единичную окружность', defaults={
+        'description': 'Решите задачи 1–10 из конспекта и приложите фото решения.',
+        'deadline': now + timedelta(days=3), 'max_score': 10, 'created_by': teacher_user})
+    Assignment.objects.get_or_create(lesson=lesson2, title='Доказательство формул', defaults={
+        'description': 'Докажите формулы приведения для sin и cos.',
+        'deadline': now + timedelta(days=7), 'max_score': 20, 'created_by': teacher_user})
+    AssignmentSubmission.objects.get_or_create(assignment=hw1, student=student1, defaults={
+        'text_content': 'Решения задач 1–10:\n1) sin 30° = 1/2\n2) cos 60° = 1/2\n...'})
+
+    # Открытый вопрос в отдельном тесте — учителю есть что проверить вручную
+    open_q, _ = Question.objects.get_or_create(topic=topic, text='Объясните своими словами, что такое радиан.',
+                                               defaults={'type': 'open', 'difficulty': 2, 'created_by': teacher_user})
+    essay, _ = Test.objects.get_or_create(course=c1, title='Мини-эссе: радианная мера', defaults={
+        'mode': Test.Mode.PRACTICE, 'time_limit_minutes': 0, 'max_attempts': 3, 'passing_score_pct': 50})
+    TestQuestion.objects.get_or_create(test=essay, question=open_q, defaults={'order': 1, 'points': 5})
+
+    Announcement.objects.get_or_create(org=org, title='Добро пожаловать в EduPlatform!', defaults={
+        'content': 'Это демо-объявление для всей школы. Расписание — в разделе «Расписание».',
+        'created_by': admin_user})
+    Announcement.objects.get_or_create(org=org, course=c1, title='Контрольная по тригонометрии', defaults={
+        'content': 'Через 3 дня — контрольная. Повторите формулы приведения.', 'created_by': teacher_user})
+    print("✓ Демо-данные для ролей: куратор, вторая школа, расписание, задания, заказ, объявления.")
 
 
 if __name__ == '__main__':

@@ -293,7 +293,7 @@ class AuthService:
             user_id=user.id,
             subject='Подтверждение регистрации на EduPlatform',
             template='verify_email',
-            context={'link': f"{settings.FRONTEND_URL}/api/v1/auth/verify-email/?token={raw_token}"},
+            context={'link': f"{settings.FRONTEND_URL}/verify-email?token={raw_token}"},
         )
 
     @classmethod

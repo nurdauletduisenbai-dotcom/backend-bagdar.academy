@@ -82,7 +82,7 @@ class TestJwtAndSessions:
             })
         assert res.status_code == 201
         assert len(mail.outbox) == 1
-        assert '/api/v1/auth/verify-email/?token=' in mail.outbox[0].body
+        assert '/verify-email?token=' in mail.outbox[0].body
 
 
 @pytest.mark.django_db

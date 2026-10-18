@@ -375,6 +375,7 @@ class AssessmentService:
                 'text': q.text,
                 'points': tq.points,
                 'explanation': q.explanation,
+                'options': [{'id': o.id, 'text': o.text} for o in q.options.all()],
                 'correct_options': [
                     {'id': o.id, 'text': o.text, 'match_target': o.match_target or None}
                     for o in q.options.all() if o.is_correct or (q.type == Question.Type.MATCH and o.match_target)

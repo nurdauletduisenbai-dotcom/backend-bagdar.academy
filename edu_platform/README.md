@@ -85,11 +85,19 @@ make logs        # логи всех сервисов
 
 Фронтенд обращается к `/api/...` на своём же адресе, Vite проксирует запросы на Django. Поэтому CORS не нужен, а refresh-cookie работает.
 
-Демо-пользователи (после `make seed`):
-- **Администратор:** `admin@fizmat.kz` / `AdminPassword123!`
-- **Учитель:** `teacher@fizmat.kz` / `TeacherPassword123!`
-- **Ученик:** `student1@fizmat.kz` / `StudentPassword123!`
-- **Родитель:** `parent@fizmat.kz` / `ParentPassword123!`
+Демо-пользователи (после `make seed`; на странице входа есть кнопки быстрого входа):
+
+| Роль | Email | Пароль | Что проверить |
+|---|---|---|---|
+| Администратор | `admin@fizmat.kz` | `AdminPassword123!` | сводка, участники и роли, приглашения, подтверждение оплат, аудит |
+| Учитель | `teacher@fizmat.kz` | `TeacherPassword123!` | редактор курса, видео/материалы, тесты и банк вопросов, проверка работ, посещаемость |
+| Куратор | `curator@fizmat.kz` | `CuratorPassword123!` | просмотр курсов и прогресса учеников |
+| Ученик | `student1@fizmat.kz` | `StudentPassword123!` | уроки, видео, тесты, сдача заданий, расписание |
+| Ученик 2 | `student2@fizmat.kz` | `StudentPassword123!` | покупка курса (заказ ждёт подтверждения админом) |
+| Родитель | `parent@fizmat.kz` | `ParentPassword123!` | прогресс ребёнка (student1) |
+| Две школы | `multi@fizmat.kz` | `MultiPassword123!` | переключатель организаций: ученик в ФизМат, учитель в Школе №2 |
+| Админ Школы №2 | `admin@school2.kz` | `School2Password123!` | изоляция: данных ФизМат не видно |
+| Django admin | `superadmin@edu.local` | `SuperAdminPassword123!` | http://localhost:8000/admin/ |
 
 ---
 

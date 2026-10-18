@@ -76,3 +76,27 @@ export function errorMessage(error: unknown): string {
   }
   return 'Неизвестная ошибка'
 }
+
+/** Скачать защищённый файл (download_url из API) с токеном и сохранить на диск */
+export async function downloadFile(url: string, filename: string) {
+  const path = url.replace(/^\/api\/v1/, '')
+  const response = await http.get<Blob>(path, { responseType: 'blob' })
+  const disposition = String(response.headers['content-disposition'] ?? '')
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+  const name = match ? decodeURIComponent(match[1]) : filename
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(response.data)
+  link.download = name
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+/** Объект -> FormData (для загрузки файлов). Пустые значения пропускаются */
+export function toFormData(data: Record<string, unknown>): FormData {
+  const form = new FormData()
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined || value === null || value === '') continue
+    form.append(key, value instanceof Blob ? value : String(value))
+  }
+  return form
+}

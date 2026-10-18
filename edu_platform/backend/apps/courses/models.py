@@ -24,6 +24,7 @@ class Course(SoftDeletableModel):
     subject = models.CharField(max_length=100, blank=True)
     grade_level = models.PositiveSmallIntegerField('Класс обучения', null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    access_days = models.PositiveIntegerField('Доступ после оплаты (дней)', default=365)
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
     is_free_preview_enabled = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_courses')

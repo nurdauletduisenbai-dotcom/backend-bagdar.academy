@@ -316,6 +316,88 @@ class AuthService:
         return True
 
 
+    @classmethod
+    def resend_verification(cls, user: User):
+        if user.is_verified:
+            raise ValidationError('Email уже подтверждён.')
+        EmailToken.objects.filter(user=user, type=EmailToken.TokenType.VERIFY, used_at__isnull=True).update(
+            used_at=timezone.now()
+        )
+        cls.send_verification_email(user)
+
+    # ---------- Сброс пароля ----------
+
+    @classmethod
+    def request_password_reset(cls, email: str):
+        """Всегда «успешно» — чтобы по ответу нельзя было узнать, есть ли такой email."""
+        user = User.objects.filter(email=email.lower(), is_active=True).first()
+        if not user:
+            return
+        EmailToken.objects.filter(user=user, type=EmailToken.TokenType.RESET, used_at__isnull=True).update(
+            used_at=timezone.now()
+        )
+        raw_token = secrets.token_urlsafe(32)
+        EmailToken.objects.create(
+            user=user,
+            type=EmailToken.TokenType.RESET,
+            token_hash=hash_token(raw_token),
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+        from apps.notifications.tasks import send_email_notification_task
+        link = f'{settings.FRONTEND_URL}/reset-password?token={raw_token}'
+        transaction.on_commit(lambda: send_email_notification_task.delay(
+            user_id=user.id, subject='Сброс пароля EduPlatform', template='password_reset', context={'link': link},
+        ))
+
+    @classmethod
+    @transaction.atomic
+    def reset_password(cls, raw_token: str, new_password: str):
+        token_obj = EmailToken.objects.select_for_update().filter(
+            token_hash=hash_token(raw_token or ''),
+            type=EmailToken.TokenType.RESET,
+            used_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        ).select_related('user').first()
+        if not token_obj:
+            raise ValidationError('Ссылка для сброса недействительна или истекла.')
+        user = token_obj.user
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        token_obj.used_at = timezone.now()
+        token_obj.save(update_fields=['used_at'])
+        cls.logout_all(user)
+        AuditService.log(AuditService.Action.PASSWORD_RESET, user=user)
+
+
+class ParentService:
+    @classmethod
+    def request_link(cls, parent: User, student_email: str):
+        from apps.notifications.services import NotificationService
+
+        from .models import ParentStudentRelation
+
+        parent_orgs = set(parent.memberships.filter(role='parent', is_active=True).values_list('org_id', flat=True))
+        if not parent_orgs:
+            raise PermissionDenied('Привязывать детей может пользователь с ролью «родитель».')
+        student = User.objects.filter(
+            email=student_email.lower(), memberships__role='student', memberships__org_id__in=parent_orgs,
+            memberships__is_active=True,
+        ).first()
+        if not student:
+            raise ValidationError({'student_email': 'Ученик с таким email не найден в вашей организации.'})
+        if student.id == parent.id:
+            raise ValidationError({'student_email': 'Нельзя привязать себя.'})
+
+        relation, created = ParentStudentRelation.objects.get_or_create(parent=parent, student=student)
+        if created:
+            NotificationService.notify(
+                [student], NotificationService.Type.PARENT_LINK,
+                title='Запрос от родителя',
+                message=f'{parent.get_full_name()} ({parent.email}) хочет видеть ваш прогресс. Подтвердите запрос.',
+                metadata={'relation_id': relation.id},
+            )
+        return relation
+
 class TwoFactorService:
     ISSUER = 'EduPlatform'
     BACKUP_CODES_COUNT = 8

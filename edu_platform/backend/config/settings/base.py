@@ -200,7 +200,16 @@ SPECTACULAR_SETTINGS = {
         {'name': 'organizations', 'description': 'Организации пользователя и приглашения'},
         {'name': 'courses', 'description': 'Каталог курсов, содержание, записи учеников'},
         {'name': 'videos', 'description': 'Защищённый доступ к видео и прогресс просмотра'},
-        {'name': 'tests', 'description': 'Тесты: попытки, ответы, античит, проверка'},
+        {'name': 'tests', 'description': 'Тесты: конструктор, попытки, ответы, античит, проверка, статистика'},
+        {'name': 'content', 'description': 'Разделы, уроки, материалы, комментарии'},
+        {'name': 'questions', 'description': 'Банк вопросов и темы организации'},
+        {'name': 'assignments', 'description': 'Домашние задания, сдача и проверка работ'},
+        {'name': 'schedule', 'description': 'Группы, расписание занятий, посещаемость'},
+        {'name': 'notifications', 'description': 'Уведомления, настройки, объявления'},
+        {'name': 'payments', 'description': 'Заказы, оплата курсов, возвраты, вебхуки'},
+        {'name': 'progress', 'description': 'Прогресс учеников, отчёты для родителей и учителей, сводка'},
+        {'name': 'parents', 'description': 'Связь родитель — ученик'},
+        {'name': 'audit', 'description': 'Журнал аудита организации'},
     ],
     'ENUM_NAME_OVERRIDES': {
         'OrgRoleEnum': 'apps.organizations.models.OrgMembership.Role',
@@ -210,6 +219,11 @@ SPECTACULAR_SETTINGS = {
         'EnrollmentStatusEnum': 'apps.courses.models.Enrollment.Status',
         'QuestionTypeEnum': 'apps.questions.models.Question.Type',
         'AttemptStatusEnum': 'apps.assessments.models.TestAttempt.Status',
+        'SubmissionStatusEnum': 'apps.assignments.models.AssignmentSubmission.Status',
+        'AttendanceStatusEnum': 'apps.schedule.models.Attendance.Status',
+        'OrderStatusEnum': 'apps.payments.models.Order.Status',
+        'PaymentProviderEnum': 'apps.payments.models.Order.Provider',
+        'NotificationTypeEnum': 'apps.notifications.models.Notification.Type',
         'TestModeEnum': 'apps.assessments.models.Test.Mode',
         'LanguageEnum': 'apps.accounts.models.User.Language',
     },
@@ -245,6 +259,21 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+# Периодические задачи (сервис beat в docker-compose)
+CELERY_BEAT_SCHEDULE = {
+    'assignment-deadline-reminders': {
+        'task': 'apps.assignments.tasks.send_assignment_deadline_reminders',
+        'schedule': 60 * 60,
+    },
+    'session-reminders': {
+        'task': 'apps.schedule.tasks.send_session_reminders',
+        'schedule': 5 * 60,
+    },
+}
+
+# Загрузка файлов (материалы, сдачи заданий). Файлы отдаются только через API с проверкой прав.
+MAX_UPLOAD_SIZE_MB = env.int('MAX_UPLOAD_SIZE_MB', default=20)
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 # Организация по умолчанию для публичной регистрации и адрес фронтенда (ссылки в письмах)
 DEFAULT_ORG_SLUG = env('DEFAULT_ORG_SLUG', default='fizmat-school')
@@ -255,4 +284,6 @@ FEATURE_PAYMENTS_ENABLED = env.bool('FEATURE_PAYMENTS_ENABLED', True)
 FEATURE_GOOGLE_OAUTH_ENABLED = env.bool('FEATURE_GOOGLE_OAUTH_ENABLED', False)
 FEATURE_CAPTCHA_ENABLED = env.bool('FEATURE_CAPTCHA_ENABLED', False)
 YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 TWO_FACTOR_ENCRYPTION_KEY = env('TWO_FACTOR_ENCRYPTION_KEY', default='dGhpcy1pcy1hLTMyLWJ5dGUtZmVybmV0LWtleS0xMjM=')

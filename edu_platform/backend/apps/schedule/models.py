@@ -11,6 +11,11 @@ class Session(TimeStampedModel):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     online_meeting_url = models.URLField('Ссылка на онлайн-урок (Zoom/Meet)', blank=True, null=True)
+    location = models.CharField('Аудитория / адрес', max_length=255, blank=True)
+    lesson = models.ForeignKey('content.Lesson', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='sessions', verbose_name='Тема занятия (урок курса)')
+    is_canceled = models.BooleanField('Отменено', default=False)
+    reminder_sent_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     class Meta:
         db_table = 'group_sessions'

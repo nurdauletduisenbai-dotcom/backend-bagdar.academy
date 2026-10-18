@@ -1,9 +1,62 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.viewsets import CourseScopedViewSet
+from apps.content.models import Lesson
+
+from .models import Video
 from .services import VideoService
+
+
+class VideoManageSerializer(serializers.ModelSerializer):
+    lesson = serializers.PrimaryKeyRelatedField(queryset=Lesson.objects.all())
+    youtube_url = serializers.CharField(write_only=True, required=False,
+                                        help_text='Ссылка youtube.com/watch?v=..., youtu.be/... или ID из 11 символов')
+    youtube_video_id = serializers.SerializerMethodField(help_text='Виден только тем, кто управляет курсом')
+
+    class Meta:
+        model = Video
+        fields = ('id', 'lesson', 'title', 'youtube_url', 'youtube_video_id', 'duration_seconds', 'order',
+                  'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def get_youtube_video_id(self, obj) -> str | None:
+        # ID YouTube раскрывается только тем, кто управляет курсом этого видео
+        if obj.lesson.section.course_id in self.context.get('managed_course_ids', set()):
+            return obj.youtube_video_id
+        return None
+
+    def validate(self, attrs):
+        url = attrs.pop('youtube_url', None)
+        if url:
+            attrs['youtube_video_id'] = VideoService.extract_youtube_id(url)
+        elif not self.instance:
+            raise serializers.ValidationError({'youtube_url': 'Укажите ссылку на видео YouTube.'})
+        return attrs
+
+
+@extend_schema_view(
+    list=extend_schema(summary='Видео уроков', parameters=[OpenApiParameter('lesson', int)]),
+    create=extend_schema(summary='Добавить видео YouTube к уроку (преподаватель курса)'),
+)
+@extend_schema(tags=['videos'])
+class VideoViewSet(CourseScopedViewSet):
+    queryset = Video.objects.select_related('lesson__section__course').order_by('order', 'id')
+    serializer_class = VideoManageSerializer
+    course_path = 'lesson__section__course'
+    filterset_fields = ['lesson']
+    pagination_class = None
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        if self.request and self.request.user.is_authenticated:
+            ctx['managed_course_ids'] = self.managed_ids()
+        return ctx
+
+    def course_from_data(self, validated_data):
+        return validated_data['lesson'].section.course
 
 
 class VideoPlayerSerializer(serializers.Serializer):

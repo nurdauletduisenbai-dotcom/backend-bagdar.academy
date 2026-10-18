@@ -17,6 +17,9 @@ qrcode>=7.4.2
 celery>=5.3.6
 redis>=5.0.3
 
+# Payments
+stripe>=10.0.0
+
 # API Documentation (OpenAPI 3.0 / Swagger on /docs)
 drf-spectacular>=0.27.1
 

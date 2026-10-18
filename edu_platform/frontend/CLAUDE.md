@@ -1,7 +1,12 @@
 # Frontend EduPlatform: правила для Claude Code
 
 Стек: **Vue 3 (Composition API, `<script setup lang="ts">`) + Vite + TypeScript + Pinia + Vue Router + axios**.
-Бэкенд: Django REST API в `../backend`, документация OpenAPI на http://localhost:8000/docs/.
+Бэкенд: Django REST API в `../backend` — готов полностью. **Источник правды по эндпоинтам — Swagger**
+http://localhost:8000/docs/ (JSON-схема: http://localhost:8000/api/schema/). Перед вызовом нового эндпоинта
+посмотри его запрос/ответ там и опиши тип в `src/types/api.ts`.
+
+Демо-пользователи (после `make seed`): admin@fizmat.kz / AdminPassword123!, teacher@fizmat.kz / TeacherPassword123!,
+student1@fizmat.kz / StudentPassword123!, parent@fizmat.kz / ParentPassword123!.
 
 ## Структура `src/`
 - `api/http.ts`: единственный axios-инстанс. Добавляет `Authorization: Bearer` и `X-Org-ID`, при 401 один раз вызывает `/auth/refresh/` и повторяет запрос. Не создавай другие axios-инстансы.
@@ -18,6 +23,15 @@
 - Списки пагинированы: `{ total, total_pages, page, page_size, results }` (тип `Paginated<T>`).
 - Тексты интерфейса на русском (позже добавим i18n: ru / kk / en).
 - Защищённые страницы: `meta: { requiresAuth: true }` в роуте.
+
+## Роли и что строить
+- Ученик: каталог и мои курсы, урок (видео через `/videos/{id}/play/`, материалы, комментарии), тесты
+  (`/tests/{id}/attempts/` → ответы → submit), задания (`/assignments/{id}/submit/`), расписание, уведомления, прогресс.
+- Учитель: конструктор курса (`/sections/`, `/lessons/`, `/videos/`, `/materials/`), банк вопросов, тесты
+  (`/tests/`, `/tests/{id}/questions/`, `/stats/`), проверка заданий, посещаемость, прогресс учеников курса.
+- Родитель: `/parents/children/`, `/progress/students/{id}/`.
+- Админ: `/orgs/members/`, приглашения, заказы (`mark-paid`, `refund`), `/progress/org/summary/`, `/audit/logs/`.
+- Файлы скачиваются только через `download_url` из ответа (с токеном), прямых ссылок на media нет.
 
 ## Проверка
 - `npm run build`: проверка типов (`vue-tsc`) и сборка; должна проходить перед коммитом.

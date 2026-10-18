@@ -49,4 +49,13 @@ urlpatterns = [
     path('api/v1/courses/', include('apps.courses.urls')),
     path('api/v1/videos/', include('apps.videos.urls')),
     path('api/v1/tests/', include('apps.assessments.urls')),
+    path('api/v1/parents/', include('apps.accounts.parent_urls')),
+    path('api/v1/progress/', include('apps.progress.urls')),
+    path('api/v1/payments/', include('apps.payments.urls')),
+    path('api/v1/audit/', include('apps.audit.urls')),
+    path('api/v1/', include('apps.content.urls')),
+    path('api/v1/', include('apps.questions.urls')),
+    path('api/v1/', include('apps.assignments.urls')),
+    path('api/v1/', include('apps.schedule.urls')),
+    path('api/v1/', include('apps.notifications.urls')),
 ]

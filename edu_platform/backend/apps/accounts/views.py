@@ -10,12 +10,16 @@ from rest_framework.views import APIView
 from apps.audit.services import AuditService
 from apps.common.serializers import MessageSerializer
 
-from .models import RefreshToken
+from .models import ParentStudentRelation, RefreshToken
 from .serializers import (
     ChangePasswordSerializer,
+    EmailSerializer,
     LoginResponseSerializer,
     LoginSerializer,
     LogoutSerializer,
+    ParentLinkRequestSerializer,
+    ParentRelationSerializer,
+    PasswordResetConfirmSerializer,
     RefreshTokenSerializer,
     RegisterByInviteSerializer,
     RegisterResponseSerializer,
@@ -28,7 +32,7 @@ from .serializers import (
     TwoFactorSetupResponseSerializer,
     UserProfileSerializer,
 )
-from .services import AuthService, TwoFactorService
+from .services import AuthService, ParentService, TwoFactorService
 
 REFRESH_COOKIE = 'refresh_token'
 REFRESH_COOKIE_PATH = '/api/v1/auth/'
@@ -303,3 +307,90 @@ class TwoFactorDisableView(APIView):
         serializer.is_valid(raise_exception=True)
         TwoFactorService.disable(request.user, **serializer.validated_data)
         return Response({'message': '2FA отключена.'})
+
+
+@extend_schema(tags=['auth'])
+class ResendVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(summary='Отправить письмо подтверждения ещё раз', request=None, responses={200: MessageSerializer})
+    def post(self, request):
+        AuthService.resend_verification(request.user)
+        return Response({'message': 'Письмо отправлено.'})
+
+
+@extend_schema(tags=['auth'])
+class PasswordResetRequestView(AuthThrottledView):
+    @extend_schema(summary='Запросить сброс пароля (письмо со ссылкой)', request=EmailSerializer,
+                   responses={200: MessageSerializer})
+    def post(self, request):
+        serializer = EmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        AuthService.request_password_reset(serializer.validated_data['email'])
+        return Response({'message': 'Если такой email зарегистрирован, мы отправили на него ссылку для сброса.'})
+
+
+@extend_schema(tags=['auth'])
+class PasswordResetConfirmView(AuthThrottledView):
+    @extend_schema(summary='Задать новый пароль по токену из письма', request=PasswordResetConfirmSerializer,
+                   responses={200: MessageSerializer})
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        AuthService.reset_password(serializer.validated_data['token'], serializer.validated_data['new_password'])
+        return Response({'message': 'Пароль изменён. Войдите с новым паролем.'})
+
+
+@extend_schema(tags=['parents'])
+class ParentChildrenView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(summary='Мои дети (родитель)', responses=ParentRelationSerializer(many=True))
+    def get(self, request):
+        relations = ParentStudentRelation.objects.filter(parent=request.user).select_related('parent', 'student')
+        return Response(ParentRelationSerializer(relations, many=True).data)
+
+    @extend_schema(summary='Запросить привязку ребёнка по email (ребёнок подтверждает)',
+                   request=ParentLinkRequestSerializer, responses={201: ParentRelationSerializer})
+    def post(self, request):
+        serializer = ParentLinkRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        relation = ParentService.request_link(request.user, serializer.validated_data['student_email'])
+        return Response(ParentRelationSerializer(relation).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=['parents'])
+class ParentChildDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(summary='Отвязать ребёнка', responses={204: None})
+    def delete(self, request, relation_id):
+        get_object_or_404(ParentStudentRelation, id=relation_id, parent=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=['parents'])
+class ParentRequestsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(summary='Запросы от родителей (ученик)', responses=ParentRelationSerializer(many=True))
+    def get(self, request):
+        relations = ParentStudentRelation.objects.filter(student=request.user).select_related('parent', 'student')
+        return Response(ParentRelationSerializer(relations, many=True).data)
+
+
+@extend_schema(tags=['parents'])
+class ParentRequestDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(summary='Подтвердить запрос родителя', request=None, responses=ParentRelationSerializer)
+    def post(self, request, relation_id):
+        relation = get_object_or_404(ParentStudentRelation, id=relation_id, student=request.user)
+        relation.is_confirmed = True
+        relation.save(update_fields=['is_confirmed', 'updated_at'])
+        return Response(ParentRelationSerializer(relation).data)
+
+    @extend_schema(summary='Отклонить / отозвать доступ родителя', responses={204: None})
+    def delete(self, request, relation_id):
+        get_object_or_404(ParentStudentRelation, id=relation_id, student=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

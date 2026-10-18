@@ -117,6 +117,7 @@ class VideoService:
             max_allowed = min(max_allowed, video.duration_seconds)
         progress.watched_seconds = max(progress.watched_seconds, min(watched_seconds, max_allowed))
 
+        was_completed = progress.is_completed
         if video.duration_seconds > 0:
             pct = progress.watched_seconds / video.duration_seconds * 100
             if pct >= COMPLETION_THRESHOLD_PCT:
@@ -125,6 +126,9 @@ class VideoService:
             progress.is_completed = True
 
         progress.save()
+        if progress.is_completed and not was_completed:
+            from apps.progress.services import ProgressService
+            ProgressService.on_video_completed(user, video)
         return {
             'watched_seconds': progress.watched_seconds,
             'is_completed': progress.is_completed,

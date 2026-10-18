@@ -20,18 +20,14 @@ class RequestIDMiddleware:
 
 class OrgTenantIsolationMiddleware:
     """
-    Определяет текущую организацию из заголовка X-Org-ID или токена пользователя.
-    Изолирует данные между разными учебными центрами и школами.
+    Читает запрошенную организацию из заголовка X-Org-ID в request.org_id.
+    Для JWT-пользователей значение затем проверяется по членству
+    в apps.common.authentication.TenantJWTAuthentication.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        org_id = request.headers.get('X-Org-ID')
-        user = getattr(request, 'user', None)
-
-        if not org_id and user and user.is_authenticated:
-            org_id = getattr(user, 'current_org_id', None)
-
-        request.org_id = int(org_id) if org_id and str(org_id).isdigit() else None
+        org_id = request.headers.get('X-Org-ID', '')
+        request.org_id = int(org_id) if org_id.isdigit() else None
         return self.get_response(request)

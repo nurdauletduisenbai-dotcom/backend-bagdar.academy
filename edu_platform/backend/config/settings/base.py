@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     # Third-Party Apps
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
@@ -139,7 +138,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.common.authentication.TenantJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -153,15 +152,22 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    # Ограничение частоты публичных auth-эндпоинтов (по IP)
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': env('THROTTLE_AUTH_RATE', default='20/min'),
+        'auth_refresh': env('THROTTLE_AUTH_REFRESH_RATE', default='60/min'),
+    },
 }
 
-# SimpleJWT Settings with Rotation & Refresh Tokens
+# SimpleJWT: выпускает и проверяет access-токены.
+# Refresh-токены — свои (apps.accounts.models.RefreshToken): хранятся хешем, ротация + защита от повтора.
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    'UPDATE_LAST_LOGIN': False,
+    # Смена пароля сразу делает недействительными все выданные access-токены
+    'CHECK_REVOKE_TOKEN': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -170,17 +176,50 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-# drf-spectacular (Swagger OpenAPI 3.0 on /docs)
+# drf-spectacular: Swagger UI на /docs/, ReDoc на /redoc/, схема на /api/schema/
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EduPlatform REST API',
-    'DESCRIPTION': 'Серверная часть образовательной платформы для школы/учебного центра (курсы, тесты, видео, расписание, аналитика)',
+    'DESCRIPTION': (
+        'Серверная часть образовательной платформы (курсы, видео, тесты, организации).\n\n'
+        '**Как авторизоваться в Swagger:**\n'
+        '1. `POST /api/v1/auth/login/` с email и паролем (демо: `student1@fizmat.kz` / `StudentPassword123!`).\n'
+        '2. Скопируйте `access_token` из ответа.\n'
+        '3. Нажмите **Authorize** и вставьте токен (без слова Bearer).\n\n'
+        '**Организация:** если пользователь состоит в нескольких организациях, передавайте заголовок '
+        '`X-Org-ID`. Доступ к чужой организации — 403, к её объектам — 404.\n\n'
+        '**Ошибки** всегда в формате `{"error": {"code", "message", "details"}}`.'
+    ),
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v1',
+    'TAGS': [
+        {'name': 'auth', 'description': 'Регистрация, вход, refresh-токены, сессии'},
+        {'name': '2fa', 'description': 'Двухфакторная аутентификация (TOTP)'},
+        {'name': 'users', 'description': 'Профиль текущего пользователя'},
+        {'name': 'organizations', 'description': 'Организации пользователя и приглашения'},
+        {'name': 'courses', 'description': 'Каталог курсов, содержание, записи учеников'},
+        {'name': 'videos', 'description': 'Защищённый доступ к видео и прогресс просмотра'},
+        {'name': 'tests', 'description': 'Тесты: попытки, ответы, античит, проверка'},
+    ],
+    'ENUM_NAME_OVERRIDES': {
+        'OrgRoleEnum': 'apps.organizations.models.OrgMembership.Role',
+        'PublicRoleEnum': [('student', 'student'), ('parent', 'parent')],
+        'CourseStatusEnum': 'apps.courses.models.Course.Status',
+        'CourseTypeEnum': 'apps.courses.models.Course.CourseType',
+        'EnrollmentStatusEnum': 'apps.courses.models.Enrollment.Status',
+        'QuestionTypeEnum': 'apps.questions.models.Question.Type',
+        'AttemptStatusEnum': 'apps.assessments.models.TestAttempt.Status',
+        'TestModeEnum': 'apps.assessments.models.Test.Mode',
+        'LanguageEnum': 'apps.accounts.models.User.Language',
+    },
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
         'persistAuthorization': True,
-        'displayOperationId': True,
+        'displayOperationId': False,
+        'filter': True,
+        'tryItOutEnabled': True,
+        'docExpansion': 'list',
     },
 }
 
@@ -206,6 +245,10 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+# Организация по умолчанию для публичной регистрации и адрес фронтенда (ссылки в письмах)
+DEFAULT_ORG_SLUG = env('DEFAULT_ORG_SLUG', default='fizmat-school')
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173').rstrip('/')
 
 # Platform Feature Flags
 FEATURE_PAYMENTS_ENABLED = env.bool('FEATURE_PAYMENTS_ENABLED', True)

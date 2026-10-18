@@ -20,3 +20,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
 # Быстрый хешер паролей для тестов
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    'DEFAULT_THROTTLE_RATES': {'auth': '10000/min', 'auth_refresh': '10000/min'},
+}

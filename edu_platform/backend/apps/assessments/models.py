@@ -8,6 +8,8 @@ from apps.questions.models import Question
 
 
 class Test(TimeStampedModel):
+    __test__ = False  # не путать pytest: это модель, а не тест-класс
+
     class Mode(models.TextChoices):
         PRACTICE = 'practice', 'Практика (без таймера)'
         QUIZ = 'quiz', 'Квиз / Проверочная'
@@ -40,6 +42,8 @@ class Test(TimeStampedModel):
 
 
 class TestQuestion(TimeStampedModel):
+    __test__ = False  # не путать pytest: это модель, а не тест-класс
+
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='test_questions')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='in_tests')
     order = models.PositiveIntegerField(default=1)
@@ -52,6 +56,8 @@ class TestQuestion(TimeStampedModel):
 
 
 class TestAttempt(TimeStampedModel):
+    __test__ = False  # не путать pytest: это модель, а не тест-класс
+
     class Status(models.TextChoices):
         IN_PROGRESS = 'in_progress', 'В процессе'
         SUBMITTED = 'submitted', 'Сдана'
@@ -71,6 +77,10 @@ class TestAttempt(TimeStampedModel):
     score_pct = models.FloatField(default=0.0)
     is_passed = models.BooleanField(default=False)
 
+    # Порядок фиксируется при старте, чтобы при продолжении попытки вопросы не перемешивались заново
+    question_order = models.JSONField('Порядок вопросов (ID)', default=list, blank=True)
+    option_order = models.JSONField('Порядок вариантов {question_id: [option_id]}', default=dict, blank=True)
+
     class Meta:
         db_table = 'test_attempts'
         ordering = ['-started_at']
@@ -87,6 +97,7 @@ class AttemptAnswer(TimeStampedModel):
     is_correct = models.BooleanField(default=False)
     auto_graded = models.BooleanField(default=True)
     teacher_feedback = models.TextField(blank=True)
+    teacher_graded_at = models.DateTimeField('Проверено учителем', null=True, blank=True)
 
     class Meta:
         db_table = 'attempt_answers'

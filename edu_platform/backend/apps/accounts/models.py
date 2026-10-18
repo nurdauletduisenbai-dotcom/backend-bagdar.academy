@@ -63,13 +63,17 @@ class User(AbstractBaseUser, PermissionsMixin, SoftDeletableModel):
         return f"{self.first_name} {self.last_name}".strip() or self.email
 
     def get_roles_for_org(self, org_id=None):
-        """Возвращает список ролей пользователя в рамках организации"""
+        """
+        Роли пользователя в конкретной организации.
+        Без org_id ролей нет: роли одной школы не должны действовать в другой.
+        """
         if self.is_superuser:
             return ['admin', 'teacher', 'curator', 'student', 'parent']
-        qs = self.memberships.filter(is_active=True)
-        if org_id:
-            qs = qs.filter(org_id=org_id)
-        return list(qs.values_list('role', flat=True))
+        if not org_id:
+            return []
+        return list(
+            self.memberships.filter(is_active=True, org_id=org_id).values_list('role', flat=True)
+        )
 
 
 class ParentStudentRelation(TimeStampedModel):
@@ -91,6 +95,7 @@ class RefreshToken(TimeStampedModel):
     expires_at = models.DateTimeField(db_index=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
     replaced_by = models.CharField(max_length=64, null=True, blank=True)
+    org_id = models.PositiveBigIntegerField('Организация сессии', null=True, blank=True)
 
     class Meta:
         db_table = 'refresh_tokens'
@@ -133,7 +138,7 @@ class TwoFactorSecret(TimeStampedModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='two_factor')
     secret_encrypted = models.CharField(max_length=255)
     is_enabled = models.BooleanField(default=False)
-    backup_codes_hash = models.TextField(help_text='Захешированные резервные коды через запятую')
+    backup_codes_hash = models.TextField(blank=True, default='', help_text='Захешированные резервные коды через запятую')
 
     class Meta:
         db_table = 'two_factor_secrets'

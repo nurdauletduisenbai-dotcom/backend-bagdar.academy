@@ -2,12 +2,21 @@
 
 export type Role = 'admin' | 'teacher' | 'curator' | 'student' | 'parent'
 
+export interface OrganizationBrief {
+  id: number
+  name: string
+  slug: string
+  roles: Role[]
+}
+
 export interface AuthUser {
   id: number
   email: string
   full_name: string
   is_verified: boolean
+  org_id: number | null
   roles: Role[]
+  organizations: OrganizationBrief[]
 }
 
 export interface LoginSuccess {
@@ -17,9 +26,9 @@ export interface LoginSuccess {
   user: AuthUser
 }
 
+// 2FA включена: токены не выдаются, повторите вход с totp_code
 export interface Login2faRequired {
   requires_2fa: true
-  temp_token: string
 }
 
 export type LoginResponse = LoginSuccess | Login2faRequired

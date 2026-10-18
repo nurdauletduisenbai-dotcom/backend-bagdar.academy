@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { authApi, type LoginPayload } from '@/api/auth'
+import { orgsApi } from '@/api/orgs'
 import { refreshAccessToken, setAccessToken, setSessionExpiredHandler } from '@/api/http'
 import type { AuthUser } from '@/types/api'
 
@@ -12,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   function clear() {
     user.value = null
     setAccessToken(null)
+    localStorage.removeItem('org_id')
   }
 
   setSessionExpiredHandler(clear)
@@ -24,6 +26,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
     setAccessToken(result.access_token)
     user.value = result.user
+    if (result.user.org_id) {
+      localStorage.setItem('org_id', String(result.user.org_id))
+    }
     return false
   }
 
@@ -39,13 +44,23 @@ export const useAuthStore = defineStore('auth', () => {
   async function restore() {
     try {
       await refreshAccessToken()
-      const profile = await authApi.me()
+      const [profile, organizations] = await Promise.all([authApi.me(), orgsApi.my()])
+      // Сохранённая организация действительна, только если пользователь в ней ещё состоит
+      const stored = Number(localStorage.getItem('org_id'))
+      const orgId = organizations.find((o) => o.id === stored)?.id ?? organizations[0]?.id ?? null
+      if (orgId) {
+        localStorage.setItem('org_id', String(orgId))
+      } else {
+        localStorage.removeItem('org_id')
+      }
       user.value = {
         id: profile.id,
         email: profile.email,
         full_name: `${profile.first_name} ${profile.last_name}`.trim(),
         is_verified: profile.is_verified,
+        org_id: orgId,
         roles: profile.roles,
+        organizations,
       }
     } catch {
       clear()

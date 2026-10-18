@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.generic import RedirectView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -27,6 +28,9 @@ def ready_check(request):
 
 
 urlpatterns = [
+    # Корень -> Swagger UI со всеми эндпоинтами
+    path('', RedirectView.as_view(pattern_name='swagger-ui', permanent=False)),
+
     # Health & Readiness Probes
     path('health/', health_check, name='health'),
     path('ready/', ready_check, name='ready'),
@@ -41,6 +45,7 @@ urlpatterns = [
 
     # API v1 Versioned Endpoints
     path('api/v1/auth/', include('apps.accounts.urls')),
+    path('api/v1/orgs/', include('apps.organizations.urls')),
     path('api/v1/courses/', include('apps.courses.urls')),
     path('api/v1/videos/', include('apps.videos.urls')),
     path('api/v1/tests/', include('apps.assessments.urls')),

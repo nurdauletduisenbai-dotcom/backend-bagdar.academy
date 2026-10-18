@@ -57,7 +57,7 @@ make logs        # логи всех сервисов
 | Сервис | Адрес |
 |---|---|
 | Frontend (Vue, HMR) | http://localhost:5173 |
-| API + Swagger | http://localhost:8000/docs/ |
+| API + Swagger (все эндпоинты) | http://localhost:8000/docs/ (корень `/` ведёт сюда же) |
 | ReDoc | http://localhost:8000/redoc/ |
 | Health / Ready | http://localhost:8000/health/, `/ready/` |
 | MailHog (письма) | http://localhost:8025 |

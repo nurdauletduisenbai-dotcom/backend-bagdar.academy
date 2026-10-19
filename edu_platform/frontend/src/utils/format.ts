@@ -110,3 +110,14 @@ export function toLocalInput(v?: string | null) {
 
 /** Значение <input type="datetime-local"> -> ISO-строка с часовым поясом */
 export const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null)
+
+const TAG_TONES = ['', 'purple', 'orange', 'blue', 'pink', 'teal'] as const
+
+/** Цвет тега категории (CategoryTag) по названию предмета — стабильно для одного предмета */
+export function subjectTone(subject?: string | null): string {
+  if (!subject) return ''
+  let h = 0
+  for (const ch of subject.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  const tone = TAG_TONES[h % TAG_TONES.length]
+  return tone ? `tag--${tone}` : ''
+}

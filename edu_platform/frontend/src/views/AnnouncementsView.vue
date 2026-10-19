@@ -39,13 +39,14 @@ async function remove(id: number) {
   <StateBlock :loading="list.loading.value" :error="list.error.value" :empty="!list.data.value?.results.length"
               empty-text="Объявлений нет." @retry="list.run">
     <div class="stack">
-      <article v-for="a in list.data.value?.results ?? []" :key="a.id" class="card">
+      <article v-for="a in list.data.value?.results ?? []" :key="a.id" class="card announcement">
         <div class="row row--between">
-          <h2>{{ a.title }}</h2>
-          <button v-if="auth.isTeacher" class="btn btn--ghost btn--sm" @click="remove(a.id)">Удалить</button>
+          <span class="badge" :class="a.course ? '' : 'badge--info'">{{ a.course ? 'Курс' : 'Вся школа' }}</span>
+          <button v-if="auth.isTeacher" class="btn btn--text btn--sm" @click="remove(a.id)">Удалить</button>
         </div>
+        <h2>{{ a.title }}</h2>
         <p style="white-space: pre-line">{{ a.content }}</p>
-        <span class="muted small">{{ a.author }} · {{ fmtDateTime(a.created_at) }}{{ a.course ? ' · для курса' : ' · для всей школы' }}</span>
+        <span class="muted small">{{ a.author }} · {{ fmtDateTime(a.created_at) }}</span>
       </article>
     </div>
     <AppPager :page="page" :total-pages="list.data.value?.total_pages ?? 1" @change="(p) => { page = p; list.run() }" />

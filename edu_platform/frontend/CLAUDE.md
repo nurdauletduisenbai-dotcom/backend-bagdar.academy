@@ -20,7 +20,18 @@ student1@fizmat.kz / StudentPassword123!, parent@fizmat.kz / ParentPassword123!.
 - `components/ui/`: `AppModal`, `AppPager`, `AppBadge`, `StateBlock` (загрузка/ошибка/пусто), `PageHeader`, `ProgressBar`, `ToastHost`, `MathText` (формулы `$…$` через KaTeX).
 - `views/`: `auth/`, `courses/`, `tests/`, `assignments/`, `progress/`, `teach/` (учитель), `admin/`; общие страницы — в корне.
 - `demo.ts`: демо-аккаунты для кнопок быстрого входа (`VITE_SHOW_DEMO_ACCOUNTS=false` — скрыть).
-- `assets/main.css`: дизайн-токены (CSS-переменные) и базовые классы (`card`, `btn`, `table`, `form`, `grid`, `badge`, `alert`, `tabs`). Новый дизайн начинай с замены токенов.
+- `assets/main.css`: дизайн-система **EdTeach** (Claude Design, проект «Education platform wireframes»): токены и базовые классы.
+
+## Дизайн (EdTeach, вариант 1a вайрфреймов)
+- **Цвета только через токены**: `--color-primary` (зелёный `#00ed64`, CTA), `--surface-dark`/`--teal-900` (тёмные полосы), `--text-strong/secondary/tertiary`, `--border-default/strong`, `--surface-subtle/soft/feature`, `--warning-*`, `--error-*`. Новые цвета не хардкодить.
+- **Шрифты**: DM Sans (латиница, цифры) + Manrope (кириллица) — подключены через `@fontsource` в `main.css`.
+- **Раскладка**: верхнее меню (`layouts/AppLayout.vue`, ≤5 пунктов на роль из `layouts/navigation.ts`), остальное — в меню аватара.
+- **Классы**:
+  - `btn` — зелёная «пилюля» (главное действие, одно на экран); `btn--ghost` — контур; `btn--text` — без рамки; `btn--dark`; `btn--danger`; размеры `btn--sm/--lg`, `btn--block`.
+  - `band` — тёмная teal-полоса (шапка страницы, герой урока, итог теста); `page-band` — на всю ширину контейнера; внутри `eyebrow` (зелёный), `stat`, `muted`.
+  - `card` (`--subtle`, `--feature`, `--warning`, `--dark`, `--flush`, `--link`), `pills` + `pill.active` (фильтры), `tabs` (вкладки с зелёным подчёркиванием), `side-nav` (вертикальное меню), `tag` + `tag--purple/orange/blue/pink/teal` (категория курса, цвет — `subjectTone()`), `badge--success/warning/danger/info/green`, `alert--*`, `dropzone` (пунктир «добавить/загрузить»), `list-lines`, `split` / `split--nav` (контент + боковая панель).
+  - Компоненты: `AppIcon` (линейные иконки), `ProgressRing`, `ProgressBar`, `AppModal`, `StateBlock`, `PageHeader`, `MathText`.
+- Ориентир по экранам — вайрфреймы: вход 2a, главная 1a/2r, каталог 2c, мои курсы 2e, курс 1j/1k, урок 1d, тест 1i/1g/1h, результат 2j, расписание 2g, задания 2h/2i, прогресс 2k/2l, входящие 2m, проверка 2n, банк вопросов 2o, редактор теста 2p, конструктор курса 1l, админка 2r–2u, профиль 2v, заказы 2w.
 
 ## Правила
 - Импорты через алиас `@/` (это `src/`).

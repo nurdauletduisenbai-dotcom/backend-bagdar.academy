@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import QRCode from 'qrcode'
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { authApi, parentsApi } from '@/api/auth'
 import { notificationsApi } from '@/api/notifications'
@@ -14,6 +14,7 @@ import { fmtDateTime } from '@/utils/format'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const { act, busy } = useAction()
 const tab = ref<'profile' | 'security' | 'notifications' | 'parents'>('profile')
 
@@ -98,6 +99,11 @@ function open(next: typeof tab.value) {
   if (next === 'parents') requests.run()
 }
 
+onMounted(() => {
+  const wanted = route.query.tab
+  if (wanted === 'security' || wanted === 'notifications' || wanted === 'parents') open(wanted)
+})
+
 async function resend() {
   await act(() => authApi.resendVerification(), 'Письмо отправлено (MailHog: localhost:8025)')
 }
@@ -106,127 +112,172 @@ async function resend() {
 <template>
   <PageHeader title="Профиль и безопасность" :subtitle="auth.user?.email" />
 
-  <div class="tabs">
-    <button :class="{ active: tab === 'profile' }" @click="open('profile')">Профиль</button>
-    <button :class="{ active: tab === 'security' }" @click="open('security')">Безопасность</button>
-    <button :class="{ active: tab === 'notifications' }" @click="open('notifications')">Уведомления</button>
-    <button v-if="auth.isStudent" :class="{ active: tab === 'parents' }" @click="open('parents')">Родители</button>
-  </div>
+  <div class="split split--nav">
+    <nav class="side-nav card">
+      <button :class="{ active: tab === 'profile' }" @click="open('profile')">Профиль</button>
+      <button :class="{ active: tab === 'security' }" @click="open('security')">Безопасность</button>
+      <button :class="{ active: tab === 'notifications' }" @click="open('notifications')">Уведомления</button>
+      <button v-if="auth.isStudent" :class="{ active: tab === 'parents' }" @click="open('parents')">Родители</button>
+      <RouterLink v-if="auth.hasRole('student', 'parent')" to="/orders">Мои заказы</RouterLink>
+    </nav>
 
-  <section v-if="tab === 'profile'" class="card">
-    <StateBlock :loading="profile.loading.value" :error="profile.error.value" @retry="profile.run">
-      <form class="form" @submit.prevent="saveProfile">
-        <div class="form-row">
-          <label>Имя <input v-model="form.first_name" required /></label>
-          <label>Фамилия <input v-model="form.last_name" required /></label>
-        </div>
-        <div class="form-row">
-          <label>Телефон <input v-model="form.phone" /></label>
-          <label>Дата рождения <input v-model="form.birth_date" type="date" /></label>
-          <label>
-            Язык
-            <select v-model="form.language">
-              <option value="ru">Русский</option>
-              <option value="kk">Қазақша</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <button class="btn" :disabled="busy">Сохранить</button>
-          <button v-if="profile.data.value && !profile.data.value.is_verified" type="button" class="btn btn--ghost" @click="resend">
-            Подтвердить email
-          </button>
-        </div>
-      </form>
-    </StateBlock>
-  </section>
-
-  <div v-if="tab === 'security'" class="grid--2">
-    <section class="card">
-      <h2>Смена пароля</h2>
-      <form class="form" @submit.prevent="changePassword">
-        <label>Текущий пароль <input v-model="passwords.old" type="password" required /></label>
-        <label>Новый пароль <input v-model="passwords.next" type="password" minlength="10" required /></label>
-        <button class="btn" :disabled="busy">Изменить</button>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Двухфакторная аутентификация</h2>
-      <div v-if="backupCodes.length" class="stack">
-        <div class="alert alert--success">2FA включена. Сохраните резервные коды — каждый работает один раз.</div>
-        <pre class="code">{{ backupCodes.join('\n') }}</pre>
-      </div>
-      <div v-else-if="twoFa" class="stack">
-        <p class="small">Отсканируйте QR-код в Google Authenticator / 1Password и введите код.</p>
-        <img :src="qr" alt="QR-код 2FA" width="200" height="200" />
-        <p class="small muted">Или введите ключ вручную: <code>{{ twoFa.secret }}</code></p>
-        <form class="row" @submit.prevent="enableTwoFa">
-          <input v-model="code" inputmode="numeric" placeholder="123456" style="max-width: 160px" required />
-          <button class="btn" :disabled="busy">Включить</button>
-        </form>
-      </div>
-      <div v-else class="stack">
-        <button class="btn" :disabled="busy" @click="startTwoFa">Настроить 2FA</button>
-        <details>
-          <summary class="small">2FA уже включена? Отключить</summary>
-          <form class="form" style="margin-top: 8px" @submit.prevent="disableTwoFa">
-            <label>Пароль <input v-model="disableForm.password" type="password" required /></label>
-            <label>Код 2FA <input v-model="disableForm.code" required /></label>
-            <button class="btn btn--danger" :disabled="busy">Отключить 2FA</button>
+    <div class="stack">
+      <section v-if="tab === 'profile'" class="card">
+        <StateBlock :loading="profile.loading.value" :error="profile.error.value" @retry="profile.run">
+          <form class="form" @submit.prevent="saveProfile">
+            <div class="form-row">
+              <label>Имя <input v-model="form.first_name" required /></label>
+              <label>Фамилия <input v-model="form.last_name" required /></label>
+            </div>
+            <div class="form-row">
+              <label>Телефон <input v-model="form.phone" placeholder="+7 …" /></label>
+              <label>Дата рождения <input v-model="form.birth_date" type="date" /></label>
+              <label>
+                Язык
+                <select v-model="form.language">
+                  <option value="ru">Русский</option>
+                  <option value="kk">Қазақша</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+            </div>
+            <div class="row">
+              <button class="btn" :disabled="busy">Сохранить</button>
+              <button v-if="profile.data.value && !profile.data.value.is_verified" type="button" class="btn btn--ghost" @click="resend">
+                Подтвердить email
+              </button>
+            </div>
           </form>
-        </details>
-      </div>
-    </section>
+        </StateBlock>
+      </section>
 
-    <section class="card" style="grid-column: 1 / -1">
-      <div class="row row--between">
-        <h2>Активные сессии</h2>
-        <button class="btn btn--ghost btn--sm" @click="logoutAll">Выйти на всех устройствах</button>
-      </div>
-      <StateBlock :loading="sessions.loading.value" :error="sessions.error.value" :empty="!sessions.data.value?.length" @retry="sessions.run">
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Устройство</th><th>IP</th><th>Вход</th><th></th></tr></thead>
-            <tbody>
-              <tr v-for="s in sessions.data.value ?? []" :key="s.id">
-                <td class="small">{{ s.device_info || '—' }} <strong v-if="s.is_current">(текущая)</strong></td>
-                <td>{{ s.ip }}</td>
-                <td>{{ fmtDateTime(s.created_at) }}</td>
-                <td><button v-if="!s.is_current" class="btn btn--ghost btn--sm" @click="revoke(s.id)">Завершить</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </StateBlock>
-    </section>
+      <template v-if="tab === 'security'">
+        <section class="card setting">
+          <div class="setting__head">
+            <div>
+              <h2>Двухфакторная защита</h2>
+              <p class="muted small">Код из приложения-аутентификатора при каждом входе.</p>
+            </div>
+            <button v-if="!twoFa && !backupCodes.length" class="btn btn--sm" :disabled="busy" @click="startTwoFa">Настроить</button>
+          </div>
+          <div v-if="backupCodes.length" class="stack">
+            <div class="alert alert--success">2FA включена. Сохраните резервные коды — каждый работает один раз.</div>
+            <pre class="code">{{ backupCodes.join('\n') }}</pre>
+          </div>
+          <div v-else-if="twoFa" class="twofa">
+            <img :src="qr" alt="QR-код 2FA" width="180" height="180" />
+            <div class="stack">
+              <p class="small">Отсканируйте QR-код в Google Authenticator / 1Password и введите код.</p>
+              <p class="muted small">Ключ вручную: <code>{{ twoFa.secret }}</code></p>
+              <form class="row" @submit.prevent="enableTwoFa">
+                <input v-model="code" inputmode="numeric" placeholder="123456" style="max-width: 160px" required />
+                <button class="btn" :disabled="busy">Включить</button>
+              </form>
+            </div>
+          </div>
+          <details v-else>
+            <summary class="small">2FA уже включена? Отключить</summary>
+            <form class="form" style="margin-top: var(--space-sm)" @submit.prevent="disableTwoFa">
+              <div class="form-row">
+                <label>Пароль <input v-model="disableForm.password" type="password" required /></label>
+                <label>Код 2FA <input v-model="disableForm.code" required /></label>
+              </div>
+              <button class="btn btn--danger btn--sm" :disabled="busy" style="justify-self: start">Отключить 2FA</button>
+            </form>
+          </details>
+        </section>
+
+        <section class="card setting">
+          <div class="setting__head">
+            <h2>Активные сессии</h2>
+            <button class="btn btn--danger btn--sm" @click="logoutAll">Выйти на всех устройствах</button>
+          </div>
+          <StateBlock :loading="sessions.loading.value" :error="sessions.error.value" :empty="!sessions.data.value?.length" @retry="sessions.run">
+            <ul class="list-lines">
+              <li v-for="s in sessions.data.value ?? []" :key="s.id" class="row row--between">
+                <span class="session-info">
+                  <span class="small">{{ s.device_info || 'Неизвестное устройство' }}</span>
+                  <span class="muted small">{{ s.ip }} · {{ fmtDateTime(s.created_at) }}</span>
+                </span>
+                <span v-if="s.is_current" class="badge badge--success">это вы</span>
+                <button v-else class="btn btn--text btn--sm" @click="revoke(s.id)">Завершить</button>
+              </li>
+            </ul>
+          </StateBlock>
+        </section>
+
+        <section class="card setting">
+          <h2>Пароль</h2>
+          <form class="form" @submit.prevent="changePassword">
+            <div class="form-row">
+              <label>Текущий пароль <input v-model="passwords.old" type="password" required /></label>
+              <label>Новый пароль <input v-model="passwords.next" type="password" minlength="10" required /></label>
+            </div>
+            <button class="btn btn--ghost" :disabled="busy" style="justify-self: start">Сменить</button>
+          </form>
+        </section>
+      </template>
+
+      <section v-if="tab === 'notifications'" class="card">
+        <StateBlock :loading="prefs.loading.value" :error="prefs.error.value" @retry="prefs.run">
+          <form v-if="prefs.data.value" class="form" @submit.prevent="savePrefs">
+            <label class="inline"><input v-model="prefs.data.value.in_app_enabled" type="checkbox" /> Уведомления в приложении</label>
+            <label class="inline"><input v-model="prefs.data.value.email_enabled" type="checkbox" /> Письма на email</label>
+            <button class="btn" :disabled="busy" style="justify-self: start">Сохранить</button>
+          </form>
+        </StateBlock>
+      </section>
+
+      <section v-if="tab === 'parents'" class="card">
+        <h2>Кто видит мой прогресс</h2>
+        <StateBlock :loading="requests.loading.value" :error="requests.error.value" :empty="!requests.data.value?.length"
+                    empty-text="Запросов от родителей нет." @retry="requests.run">
+          <ul class="list-lines">
+            <li v-for="r in requests.data.value ?? []" :key="r.id" class="row row--between">
+              <span>{{ r.parent.full_name }} <span class="muted small">{{ r.parent.email }}</span></span>
+              <span class="row">
+                <span v-if="r.is_confirmed" class="badge badge--success">Подтверждён</span>
+                <button v-else class="btn btn--sm" @click="confirmParent(r.id)">Подтвердить</button>
+                <button class="btn btn--text btn--sm" @click="rejectParent(r.id)">{{ r.is_confirmed ? 'Закрыть доступ' : 'Отклонить' }}</button>
+              </span>
+            </li>
+          </ul>
+        </StateBlock>
+      </section>
+    </div>
   </div>
-
-  <section v-if="tab === 'notifications'" class="card">
-    <StateBlock :loading="prefs.loading.value" :error="prefs.error.value" @retry="prefs.run">
-      <form v-if="prefs.data.value" class="form" @submit.prevent="savePrefs">
-        <label class="inline"><input v-model="prefs.data.value.in_app_enabled" type="checkbox" /> Уведомления в приложении</label>
-        <label class="inline"><input v-model="prefs.data.value.email_enabled" type="checkbox" /> Письма на email</label>
-        <button class="btn" :disabled="busy" style="justify-self: start">Сохранить</button>
-      </form>
-    </StateBlock>
-  </section>
-
-  <section v-if="tab === 'parents'" class="card">
-    <h2>Кто видит мой прогресс</h2>
-    <StateBlock :loading="requests.loading.value" :error="requests.error.value" :empty="!requests.data.value?.length"
-                empty-text="Запросов от родителей нет." @retry="requests.run">
-      <ul class="list-plain">
-        <li v-for="r in requests.data.value ?? []" :key="r.id" class="row row--between">
-          <span>{{ r.parent.full_name }} <span class="muted small">{{ r.parent.email }}</span></span>
-          <span class="row">
-            <span v-if="r.is_confirmed" class="badge badge--success">Подтверждён</span>
-            <button v-else class="btn btn--sm" @click="confirmParent(r.id)">Подтвердить</button>
-            <button class="btn btn--ghost btn--sm" @click="rejectParent(r.id)">{{ r.is_confirmed ? 'Закрыть доступ' : 'Отклонить' }}</button>
-          </span>
-        </li>
-      </ul>
-    </StateBlock>
-  </section>
 </template>
+
+<style scoped>
+.side-nav.card {
+  padding: var(--space-xs);
+  position: sticky;
+  top: calc(var(--nav-height) + var(--space-md));
+}
+.setting {
+  display: grid;
+  gap: var(--space-md);
+}
+.setting__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+.setting__head h2,
+.setting__head p {
+  margin: 0;
+}
+.twofa {
+  display: flex;
+  gap: var(--space-xl);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.twofa p {
+  margin: 0;
+}
+.session-info {
+  display: grid;
+}
+</style>

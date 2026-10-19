@@ -28,8 +28,8 @@ async function onSubmit() {
     </div>
     <form v-else class="form" @submit.prevent="onSubmit">
       <label>Email <input v-model="email" type="email" required /></label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button class="btn">Отправить ссылку</button>
+      <p v-if="error" class="alert alert--error">{{ error }}</p>
+      <button class="btn btn--lg btn--block">Отправить ссылку</button>
       <RouterLink to="/login" class="small">← Ко входу</RouterLink>
     </form>
   </AuthCard>

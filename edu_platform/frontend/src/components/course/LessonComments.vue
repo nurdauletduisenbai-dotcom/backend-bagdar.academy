@@ -42,10 +42,10 @@ async function toggle(c: Comment) {
 
 <template>
   <section class="card">
-    <h2>Вопросы и обсуждение</h2>
+    <h2>Вопросы к уроку</h2>
     <StateBlock :loading="comments.loading.value" :error="comments.error.value" :empty="!roots.length"
                 empty-text="Пока нет вопросов — задайте первый." @retry="comments.run">
-      <ul class="list-plain">
+      <ul class="list-lines">
         <li v-for="c in roots" :key="c.id" class="stack" style="gap: 6px">
           <div class="row row--between">
             <strong>{{ c.author.name }}</strong>
@@ -55,18 +55,18 @@ async function toggle(c: Comment) {
             {{ c.content }} <span v-if="c.is_hidden" class="badge">скрыт</span>
           </p>
           <div class="row small">
-            <button class="btn btn--ghost btn--sm" @click="replyTo = c">Ответить</button>
-            <button v-if="c.author.id === auth.user?.id || canModerate" class="btn btn--ghost btn--sm" @click="remove(c)">Удалить</button>
-            <button v-if="canModerate" class="btn btn--ghost btn--sm" @click="toggle(c)">{{ c.is_hidden ? 'Показать' : 'Скрыть' }}</button>
+            <button class="btn btn--text btn--sm" @click="replyTo = c">Ответить</button>
+            <button v-if="c.author.id === auth.user?.id || canModerate" class="btn btn--text btn--sm" @click="remove(c)">Удалить</button>
+            <button v-if="canModerate" class="btn btn--text btn--sm" @click="toggle(c)">{{ c.is_hidden ? 'Показать' : 'Скрыть' }}</button>
           </div>
-          <ul v-if="repliesOf(c.id).length" class="list-plain" style="margin-left: 24px">
+          <ul v-if="repliesOf(c.id).length" class="replies">
             <li v-for="r in repliesOf(c.id)" :key="r.id">
               <div class="row row--between">
                 <strong>{{ r.author.name }}</strong>
                 <span class="muted small">{{ fmtDateTime(r.created_at) }}</span>
               </div>
               <p style="margin: 4px 0 0; white-space: pre-line">{{ r.content }}</p>
-              <button v-if="r.author.id === auth.user?.id || canModerate" class="btn btn--ghost btn--sm" @click="remove(r)">Удалить</button>
+              <button v-if="r.author.id === auth.user?.id || canModerate" class="btn btn--text btn--sm" @click="remove(r)">Удалить</button>
             </li>
           </ul>
         </li>
@@ -83,3 +83,14 @@ async function toggle(c: Comment) {
     </form>
   </section>
 </template>
+
+<style scoped>
+.replies {
+  list-style: none;
+  margin: var(--space-xs) 0 0 var(--space-xl);
+  padding: 0 0 0 var(--space-md);
+  border-left: 2px solid var(--green-soft);
+  display: grid;
+  gap: var(--space-sm);
+}
+</style>

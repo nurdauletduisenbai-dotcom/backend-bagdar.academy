@@ -48,57 +48,47 @@ function useDemo(account: DemoAccount) {
 </script>
 
 <template>
-  <AuthCard title="Вход" :wide="showDemoAccounts">
-    <div :class="{ 'login-grid': showDemoAccounts }">
-      <form class="form" @submit.prevent="onSubmit">
-        <label>Email <input v-model="email" type="email" autocomplete="email" required /></label>
-        <label>Пароль <input v-model="password" type="password" autocomplete="current-password" required /></label>
-        <label v-if="needs2fa">
-          Код 2FA (или резервный код)
-          <input v-model="totpCode" inputmode="numeric" autocomplete="one-time-code" required autofocus />
-        </label>
-        <p v-if="error" class="error">{{ error }}</p>
-        <button class="btn" type="submit" :disabled="loading">{{ loading ? 'Входим…' : 'Войти' }}</button>
-        <div class="row row--between small">
-          <RouterLink to="/register">Регистрация</RouterLink>
-          <RouterLink to="/forgot-password">Забыли пароль?</RouterLink>
-        </div>
-        <RouterLink to="/invite" class="small">У меня есть приглашение</RouterLink>
-      </form>
-
-      <div v-if="showDemoAccounts">
-        <h2>Демо-аккаунты</h2>
-        <p class="muted small">Нажмите, чтобы войти под ролью. Данные создаются командой <code>make seed</code>.</p>
-        <ul class="list-plain">
-          <li v-for="a in demoAccounts" :key="a.email" class="demo" @click="useDemo(a)">
-            <div class="row row--between">
-              <strong>{{ a.role }}</strong>
-              <span class="muted small">{{ a.email }}</span>
-            </div>
-            <span class="muted small">{{ a.note }}</span>
-          </li>
-        </ul>
+  <AuthCard title="Вход" subtitle="Войдите, чтобы продолжить обучение.">
+    <form class="form" @submit.prevent="onSubmit">
+      <label>Email <input v-model="email" type="email" autocomplete="email" placeholder="you@school.kz" required /></label>
+      <label>Пароль <input v-model="password" type="password" autocomplete="current-password" required /></label>
+      <label v-if="needs2fa">
+        Код двухфакторной защиты (или резервный код)
+        <input v-model="totpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456" required autofocus />
+      </label>
+      <p v-if="error" class="alert alert--error">{{ error }}</p>
+      <button class="btn btn--lg btn--block" type="submit" :disabled="loading">
+        {{ loading ? 'Входим…' : needs2fa ? 'Продолжить' : 'Войти' }}
+      </button>
+      <div class="row row--between small">
+        <RouterLink to="/forgot-password">Забыли пароль?</RouterLink>
+        <RouterLink to="/register">Регистрация</RouterLink>
       </div>
+      <RouterLink to="/invite" class="small">У меня есть приглашение →</RouterLink>
+    </form>
+
+    <div v-if="showDemoAccounts" class="demo">
+      <div class="eyebrow">Демо-вход</div>
+      <div class="pills">
+        <button v-for="a in demoAccounts" :key="a.email" type="button" class="pill" :title="`${a.email} — ${a.note}`"
+                :disabled="loading" @click="useDemo(a)">
+          {{ a.role }}
+        </button>
+      </div>
+      <p class="muted small">Аккаунты создаются командой <code>make seed</code>. Наведите на кнопку — увидите, что проверить.</p>
     </div>
   </AuthCard>
 </template>
 
 <style scoped>
-.login-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 32px;
-  align-items: start;
-}
-@media (max-width: 760px) {
-  .login-grid {
-    grid-template-columns: 1fr;
-  }
-}
 .demo {
-  cursor: pointer;
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+  margin-top: var(--space-xs);
+  border-top: 1px dashed var(--border-strong);
 }
-.demo:hover {
-  border-color: var(--primary);
+.demo p {
+  margin: 0;
 }
 </style>

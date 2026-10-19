@@ -21,7 +21,7 @@ const { act, busy } = useAction()
 const courseId = Number(props.id)
 const course = useAsync(() => coursesApi.get(courseId))
 
-const tabs = { program: 'Программа', settings: 'Настройки', tests: 'Тесты', assignments: 'Задания', groups: 'Группы и расписание', students: 'Ученики' } as const
+const tabs = { program: 'Программа', tests: 'Тесты', assignments: 'ДЗ', groups: 'Группы', students: 'Ученики', settings: 'Настройки' } as const
 const tab = ref<keyof typeof tabs>('program')
 
 async function save(payload: CoursePayload) {
@@ -38,7 +38,7 @@ async function remove() {
   <StateBlock :loading="course.loading.value && !course.data.value" :error="course.error.value" @retry="course.run">
     <template v-if="course.data.value">
       <PageHeader :title="course.data.value.title">
-        <template #before><RouterLink to="/teach/courses" class="small">← Курсы</RouterLink></template>
+        <template #before><RouterLink to="/teach/courses" class="back small muted">← Курсы</RouterLink></template>
         <AppBadge :kind="course.data.value.status === 'published' ? 'success' : 'warning'">{{ courseStatusLabels[course.data.value.status] }}</AppBadge>
         <RouterLink :to="`/courses/${id}`" class="btn btn--ghost">Как видит ученик</RouterLink>
       </PageHeader>
@@ -47,10 +47,10 @@ async function remove() {
         <button v-for="(label, key) in tabs" :key="key" :class="{ active: tab === key }" @click="tab = key">{{ label }}</button>
       </div>
 
-      <CourseProgramTab v-if="tab === 'program'" :course-id="courseId" />
+      <CourseProgramTab v-if="tab === 'program'" :course-id="courseId" @tab="(t) => (tab = t as keyof typeof tabs)" />
       <section v-else-if="tab === 'settings'" class="card stack">
         <CourseForm :course="course.data.value" :busy="busy" @save="save" />
-        <hr style="border: none; border-top: 1px solid var(--border); width: 100%" />
+        <hr class="divider" />
         <button class="btn btn--danger" style="justify-self: start" :disabled="busy" @click="remove">Удалить курс</button>
       </section>
       <CourseTestsTab v-else-if="tab === 'tests'" :course-id="courseId" />

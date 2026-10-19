@@ -40,8 +40,8 @@ async function onSubmit() {
       </div>
       <label>Email <input v-model="form.email" type="email" required /></label>
       <label>Пароль (от 10 символов) <input v-model="form.password" type="password" minlength="10" required /></label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button class="btn">Создать аккаунт</button>
+      <p v-if="error" class="alert alert--error">{{ error }}</p>
+      <button class="btn btn--lg btn--block">Создать аккаунт</button>
     </form>
   </AuthCard>
 </template>

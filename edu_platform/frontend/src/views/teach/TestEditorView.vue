@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { questionsApi, testsApi } from '@/api/tests'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import MathText from '@/components/ui/MathText.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -88,29 +89,38 @@ const inTest = (questionId: number) => items.data.value?.some((i) => i.question.
         <button :class="{ active: tab === 'attempts' }" @click="open('attempts')">Попытки и проверка</button>
       </div>
 
-      <section v-if="tab === 'questions'" class="card">
-        <div class="row row--between">
-          <h2>Вопросы теста</h2>
-          <button class="btn" @click="openBank">+ Из банка вопросов</button>
-        </div>
-        <StateBlock :loading="items.loading.value" :error="items.error.value" :empty="!items.data.value?.length"
-                    empty-text="Добавьте вопросы из банка. Создать новые — в разделе «Банк вопросов»." @retry="items.run">
-          <ul class="list-plain">
-            <li v-for="item in items.data.value ?? []" :key="item.id" class="row row--between">
-              <span style="flex: 1">
-                <AppBadge>{{ questionTypeLabels[item.question.type] }}</AppBadge>
-                <MathText :text="item.question.text" />
-              </span>
-              <span class="row">
-                <input type="number" min="0" step="0.5" :value="item.points" style="width: 80px" title="Баллы"
+      <div v-if="tab === 'questions'" class="split">
+        <section class="card">
+          <div class="row row--between">
+            <h2>Вопросы · {{ items.data.value?.length ?? 0 }}</h2>
+            <button class="btn btn--sm" @click="openBank">+ из банка</button>
+          </div>
+          <StateBlock :loading="items.loading.value" :error="items.error.value" :empty="!items.data.value?.length"
+                      empty-text="Добавьте вопросы из банка. Новые вопросы создаются в «Банке вопросов»." @retry="items.run">
+            <ul class="list-plain">
+              <li v-for="(item, i) in items.data.value ?? []" :key="item.id" class="tq">
+                <span class="tq__handle muted">⠿</span>
+                <span class="tq__text">{{ i + 1 }}. <MathText :text="item.question.text" /> <span class="badge">{{ questionTypeLabels[item.question.type] }}</span></span>
+                <input type="number" min="0" step="0.5" :value="item.points" class="tq__points" title="Баллы"
                        @change="setPoints(item.question.id, Number(($event.target as HTMLInputElement).value))" />
-                <button class="btn btn--ghost btn--sm" @click="removeQuestion(item.question.id)">Убрать</button>
-              </span>
-            </li>
-          </ul>
-        </StateBlock>
-        <p class="muted small">После первой сданной попытки состав теста заблокирован — для правок создайте новый тест.</p>
-      </section>
+                <span class="small muted">б.</span>
+                <button class="btn btn--text btn--sm" title="Убрать" @click="removeQuestion(item.question.id)"><AppIcon name="x" :size="14" /></button>
+              </li>
+            </ul>
+          </StateBlock>
+          <button class="dropzone add-q" @click="openBank">+ из банка · <RouterLink to="/teach/questions" @click.stop>+ новый</RouterLink></button>
+          <p class="muted small">После первой сданной попытки состав теста заблокирован — для правок создайте новый тест.</p>
+        </section>
+        <aside class="card card--subtle summary">
+          <div>Режим: <strong>{{ testModeLabels[test.data.value.mode] }}</strong></div>
+          <div>Время: <strong>{{ test.data.value.time_limit_minutes ? `${test.data.value.time_limit_minutes} мин` : 'без таймера' }}</strong></div>
+          <div>Проход: <strong>{{ test.data.value.passing_score_pct }}%</strong></div>
+          <div>Попыток: <strong>{{ test.data.value.max_attempts || '∞' }}</strong></div>
+          <label class="inline"><input type="checkbox" :checked="test.data.value.shuffle_questions" disabled /> перемешать</label>
+          <label class="inline"><input type="checkbox" :checked="test.data.value.show_answers_after_submit" disabled /> показать разбор</label>
+          <button class="btn btn--ghost btn--sm" @click="open('settings')">Изменить</button>
+        </aside>
+      </div>
 
       <section v-else-if="tab === 'settings'" class="card">
         <form class="form" @submit.prevent="saveSettings">
@@ -205,3 +215,29 @@ const inTest = (questionId: number) => items.data.value?.some((i) => i.question.
     </StateBlock>
   </AppModal>
 </template>
+
+<style scoped>
+.tq {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 72px auto auto;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.tq__points {
+  height: 36px;
+  text-align: center;
+  padding: 0 6px;
+}
+.add-q {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-sm);
+  cursor: pointer;
+  font: inherit;
+}
+.summary {
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--fs-body-sm);
+}
+</style>

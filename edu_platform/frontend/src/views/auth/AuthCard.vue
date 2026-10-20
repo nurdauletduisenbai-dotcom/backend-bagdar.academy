@@ -85,7 +85,20 @@ defineProps<{ title: string; subtitle?: string }>()
 .auth__inner > p {
   margin: -8px 0 0;
 }
-@media (max-width: 860px) {
+/* Планшет: сплит сохраняем, панель уже */
+@media (max-width: 1024px) {
+  .auth {
+    grid-template-columns: minmax(260px, 4fr) 6fr;
+  }
+  .auth__brand {
+    padding: var(--space-xxl) var(--space-xl);
+  }
+  .auth__slogan {
+    font-size: var(--fs-h3);
+  }
+}
+/* Телефон: панель сверху */
+@media (max-width: 640px) {
   .auth {
     grid-template-columns: 1fr;
   }

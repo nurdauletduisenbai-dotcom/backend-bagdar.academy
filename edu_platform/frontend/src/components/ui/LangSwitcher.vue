@@ -27,6 +27,7 @@ const shortLabel: Record<string, string> = { ru: 'RU', kk: 'ҚАЗ' }
 <style scoped>
 .lang-switcher {
   display: inline-flex;
+  width: fit-content;
   gap: 2px;
   padding: 2px;
   border-radius: var(--radius-full);

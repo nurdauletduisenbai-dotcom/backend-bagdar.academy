@@ -48,27 +48,27 @@ function useDemo(account: DemoAccount) {
 </script>
 
 <template>
-  <AuthCard title="Вход" subtitle="Войдите, чтобы продолжить обучение.">
+  <AuthCard :title="$t('auth.loginTitle')" :subtitle="$t('auth.loginSubtitle')">
     <form class="form" @submit.prevent="onSubmit">
-      <label>Email <input v-model="email" type="email" autocomplete="email" placeholder="you@school.kz" required /></label>
-      <label>Пароль <input v-model="password" type="password" autocomplete="current-password" required /></label>
+      <label>{{ $t('auth.email') }} <input v-model="email" type="email" autocomplete="email" placeholder="you@school.kz" required /></label>
+      <label>{{ $t('auth.password') }} <input v-model="password" type="password" autocomplete="current-password" required /></label>
       <label v-if="needs2fa">
         Код двухфакторной защиты (или резервный код)
         <input v-model="totpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456" required autofocus />
       </label>
       <p v-if="error" class="alert alert--error">{{ error }}</p>
       <button class="btn btn--lg btn--block" type="submit" :disabled="loading">
-        {{ loading ? 'Входим…' : needs2fa ? 'Продолжить' : 'Войти' }}
+        {{ loading ? 'Входим…' : needs2fa ? 'Продолжить' : $t('auth.submit') }}
       </button>
       <div class="row row--between small">
-        <RouterLink to="/forgot-password">Забыли пароль?</RouterLink>
-        <RouterLink to="/register">Регистрация</RouterLink>
+        <RouterLink to="/forgot-password">{{ $t('auth.forgotPassword') }}</RouterLink>
+        <RouterLink to="/register">{{ $t('auth.register') }}</RouterLink>
       </div>
-      <RouterLink to="/invite" class="small">У меня есть приглашение →</RouterLink>
+      <RouterLink to="/invite" class="small">{{ $t('auth.haveInvite') }} →</RouterLink>
     </form>
 
     <div v-if="showDemoAccounts" class="demo">
-      <div class="eyebrow">Демо-вход</div>
+      <div class="eyebrow">{{ $t('auth.demoLogin') }}</div>
       <div class="pills">
         <button v-for="a in demoAccounts" :key="a.email" type="button" class="pill" :title="`${a.email} — ${a.note}`"
                 :disabled="loading" @click="useDemo(a)">

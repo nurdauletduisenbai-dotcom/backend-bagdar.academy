@@ -1,0 +1,63 @@
+/**
+ * Русский (запасной язык). Сейчас — только каркас (навигация, вход, роли):
+ * полный перевод остального интерфейса будет добавлен позже.
+ */
+export default {
+  common: {
+    appName: 'bagdar',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    close: 'Закрыть',
+    loading: 'Загрузка…',
+  },
+  lang: {
+    ru: 'Русский',
+    kk: 'Қазақша',
+    switchTo: 'Сменить язык',
+  },
+  nav: {
+    home: 'Главная',
+    summary: 'Сводка',
+    courses: 'Курсы',
+    myCourses: 'Мои курсы',
+    members: 'Участники',
+    orders: 'Оплаты',
+    schedule: 'Расписание',
+    submissions: 'Проверка',
+    questionBank: 'Банк вопросов',
+    students: 'Ученики',
+    children: 'Мои дети',
+    catalog: 'Курсы',
+    assignments: 'Задания',
+    progress: 'Прогресс',
+    profile: 'Профиль и безопасность',
+    notifications: 'Уведомления',
+    announcements: 'Объявления',
+    invites: 'Приглашения',
+    audit: 'Журнал аудита',
+    settings: 'Настройки школы',
+    myOrders: 'Мои заказы',
+  },
+  roles: {
+    admin: 'Администратор',
+    teacher: 'Учитель',
+    curator: 'Куратор',
+    student: 'Ученик',
+    parent: 'Родитель',
+  },
+  auth: {
+    brandSlogan: 'Учитесь думать, а не просто сдавать.',
+    brandNote: 'Видеоуроки, тесты, домашние задания и расписание — в одном месте для учеников, родителей и учителей.',
+    loginTitle: 'Вход',
+    loginSubtitle: 'Войдите, чтобы продолжить обучение.',
+    email: 'Email',
+    password: 'Пароль',
+    submit: 'Войти',
+    forgotPassword: 'Забыли пароль?',
+    register: 'Регистрация',
+    haveInvite: 'У меня есть приглашение',
+    demoLogin: 'Демо-вход',
+  },
+  logout: 'Выйти',
+  organization: 'Организация',
+} as const

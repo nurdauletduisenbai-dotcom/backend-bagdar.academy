@@ -3,10 +3,12 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppIcon from '@/components/ui/AppIcon.vue'
+import LangSwitcher from '@/components/ui/LangSwitcher.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useLocaleStore } from '@/stores/locale'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useToast } from '@/stores/toast'
-import { roleLabels } from '@/utils/format'
+import { roleLabel } from '@/utils/format'
 
 import { menuLinks, topLinks } from './navigation'
 
@@ -15,6 +17,7 @@ const notifications = useNotificationsStore()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
+const locale = useLocaleStore()
 
 const menuOpen = ref(false)
 const mobileOpen = ref(false)
@@ -30,7 +33,7 @@ const initials = computed(() =>
     .join('')
     .toUpperCase(),
 )
-const roleText = computed(() => auth.roles.map((r) => roleLabels[r]).join(', ') || 'без роли')
+const roleText = computed(() => auth.roles.map((r) => roleLabel(r)).join(', ') || '—')
 
 /** Активен самый «длинный» подходящий пункт: на /admin/orders горит «Оплаты», а не «Сводка» (/admin) */
 const activeTo = computed(() => {
@@ -82,19 +85,20 @@ onUnmounted(() => {
 
       <nav class="topnav__links" :class="{ open: mobileOpen }">
         <RouterLink v-for="item in top" :key="item.to" :to="item.to" class="topnav__link" :class="{ active: isActive(item.to) }">
-          {{ item.label }}
+          {{ $t(item.labelKey) }}
         </RouterLink>
         <!-- На телефоне в выпадающем меню показываем сразу все разделы -->
         <template v-if="mobileOpen">
           <RouterLink v-for="item in more" :key="item.to" :to="item.to" class="topnav__link topnav__link--extra"
                       :class="{ active: isActive(item.to) }">
-            {{ item.label }}
+            {{ $t(item.labelKey) }}
           </RouterLink>
         </template>
       </nav>
 
       <div class="topnav__right">
-        <RouterLink to="/notifications" class="icon-btn" title="Уведомления" aria-label="Уведомления">
+        <LangSwitcher class="lang-switcher--nav" />
+        <RouterLink to="/notifications" class="icon-btn" :title="$t('nav.notifications')" :aria-label="$t('nav.notifications')">
           <AppIcon name="bell" />
           <span v-if="notifications.unread" class="bell-count">{{ notifications.unread > 99 ? '99+' : notifications.unread }}</span>
         </RouterLink>
@@ -109,20 +113,20 @@ onUnmounted(() => {
               <span class="muted small">{{ auth.user?.email }} · {{ roleText }}</span>
             </div>
             <label v-if="auth.organizations.length > 1" class="dropdown__org">
-              <span class="eyebrow">Организация</span>
+              <span class="eyebrow">{{ $t('organization') }}</span>
               <select :value="auth.user?.org_id ?? ''" @change="onOrgChange">
                 <option v-for="org in auth.organizations" :key="org.id" :value="org.id">{{ org.name }}</option>
               </select>
             </label>
             <div v-else-if="auth.currentOrg" class="dropdown__org">
-              <span class="eyebrow">Организация</span>
+              <span class="eyebrow">{{ $t('organization') }}</span>
               <span class="small">{{ auth.currentOrg.name }}</span>
             </div>
             <nav class="dropdown__links">
-              <RouterLink to="/profile">Профиль и безопасность</RouterLink>
-              <RouterLink v-for="item in more" :key="item.to" :to="item.to">{{ item.label }}</RouterLink>
+              <RouterLink to="/profile">{{ $t('nav.profile') }}</RouterLink>
+              <RouterLink v-for="item in more" :key="item.to" :to="item.to">{{ $t(item.labelKey) }}</RouterLink>
             </nav>
-            <button class="dropdown__logout" @click="onLogout"><AppIcon name="logout" :size="16" /> Выйти</button>
+            <button class="dropdown__logout" @click="onLogout"><AppIcon name="logout" :size="16" /> {{ $t('logout') }}</button>
           </div>
         </div>
       </div>

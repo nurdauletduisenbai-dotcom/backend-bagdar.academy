@@ -1,11 +1,18 @@
+import { i18n } from '@/i18n'
 import type { Role } from '@/types/api'
 
+/** @deprecated используйте {@link roleLabel} — учитывает текущий язык (RU/KK) */
 export const roleLabels: Record<Role, string> = {
   admin: 'Администратор',
   teacher: 'Учитель',
   curator: 'Куратор',
   student: 'Ученик',
   parent: 'Родитель',
+}
+
+/** Название роли на текущем языке интерфейса (i18n-ключ `roles.<role>`) */
+export function roleLabel(role: Role): string {
+  return i18n.global.t(`roles.${role}`)
 }
 
 export const courseTypeLabels: Record<string, string> = {

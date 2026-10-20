@@ -1,0 +1,63 @@
+/**
+ * Қазақша (әдепкі тіл). Қазір — тек негізгі каркас (навигация, кіру, рөлдер):
+ * бет мәтіндерінің толық аудармасы кейінірек қосылады.
+ */
+export default {
+  common: {
+    appName: 'bagdar',
+    save: 'Сақтау',
+    cancel: 'Бас тарту',
+    close: 'Жабу',
+    loading: 'Жүктелуде…',
+  },
+  lang: {
+    ru: 'Орысша',
+    kk: 'Қазақша',
+    switchTo: 'Тілді ауыстыру',
+  },
+  nav: {
+    home: 'Басты бет',
+    summary: 'Жинақ',
+    courses: 'Курстар',
+    myCourses: 'Менің курстарым',
+    members: 'Қатысушылар',
+    orders: 'Төлемдер',
+    schedule: 'Кесте',
+    submissions: 'Тексеру',
+    questionBank: 'Сұрақтар банкі',
+    students: 'Оқушылар',
+    children: 'Менің балаларым',
+    catalog: 'Курстар',
+    assignments: 'Тапсырмалар',
+    progress: 'Үлгерім',
+    profile: 'Профиль және қауіпсіздік',
+    notifications: 'Хабарландырулар',
+    announcements: 'Жарияланымдар',
+    invites: 'Шақырулар',
+    audit: 'Әрекеттер журналы',
+    settings: 'Мектеп баптаулары',
+    myOrders: 'Менің тапсырыстарым',
+  },
+  roles: {
+    admin: 'Әкімші',
+    teacher: 'Мұғалім',
+    curator: 'Куратор',
+    student: 'Оқушы',
+    parent: 'Ата-ана',
+  },
+  auth: {
+    brandSlogan: 'Жаттамай, ойлауды үйреніңіз.',
+    brandNote: 'Бейнесабақтар, тесттер, үй тапсырмалары және сабақ кестесі — оқушыға, ата-анаға және мұғалімге бір жерде.',
+    loginTitle: 'Кіру',
+    loginSubtitle: 'Оқуды жалғастыру үшін кіріңіз.',
+    email: 'Email',
+    password: 'Құпия сөз',
+    submit: 'Кіру',
+    forgotPassword: 'Құпия сөзді ұмыттыңыз ба?',
+    register: 'Тіркелу',
+    haveInvite: 'Шақыру сілтемем бар',
+    demoLogin: 'Демо-кіру',
+  },
+  logout: 'Шығу',
+  organization: 'Ұйым',
+} as const

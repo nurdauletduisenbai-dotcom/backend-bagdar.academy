@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import LangSwitcher from '@/components/ui/LangSwitcher.vue'
+
 /** Вход/регистрация: слева teal-панель с брендом, справа форма (вайрфрейм 2a) */
 defineProps<{ title: string; subtitle?: string }>()
 </script>
@@ -9,10 +11,10 @@ defineProps<{ title: string; subtitle?: string }>()
       <RouterLink to="/" class="auth__logo">bagdar<span>.</span></RouterLink>
       <div class="auth__pitch">
         <div class="eyebrow">bagdar.academy</div>
-        <p class="auth__slogan">Учитесь думать, а&nbsp;не просто сдавать.</p>
-        <p class="auth__note">Видеоуроки, тесты, домашние задания и расписание — в одном месте для учеников, родителей и учителей.</p>
+        <p class="auth__slogan">{{ $t('auth.brandSlogan') }}</p>
+        <p class="auth__note">{{ $t('auth.brandNote') }}</p>
       </div>
-      <div class="auth__langs">RU · KK · EN</div>
+      <LangSwitcher dark />
     </aside>
     <section class="auth__form">
       <div class="auth__inner">
@@ -66,11 +68,6 @@ defineProps<{ title: string; subtitle?: string }>()
   color: var(--text-on-dark-muted);
   margin: 0;
 }
-.auth__langs {
-  font-size: var(--fs-caption);
-  color: var(--text-on-dark-muted);
-  letter-spacing: 1px;
-}
 .auth__form {
   display: grid;
   place-items: center;
@@ -109,8 +106,7 @@ defineProps<{ title: string; subtitle?: string }>()
   .auth__slogan {
     font-size: var(--fs-h4);
   }
-  .auth__note,
-  .auth__langs {
+  .auth__note {
     display: none;
   }
 }

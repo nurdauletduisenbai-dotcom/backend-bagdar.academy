@@ -21,6 +21,20 @@ student1@fizmat.kz / StudentPassword123!, parent@fizmat.kz / ParentPassword123!.
 - `views/`: `auth/`, `courses/`, `tests/`, `assignments/`, `progress/`, `teach/` (учитель), `admin/`; общие страницы — в корне.
 - `demo.ts`: демо-аккаунты для кнопок быстрого входа (`VITE_SHOW_DEMO_ACCOUNTS=false` — скрыть).
 - `assets/main.css`: дизайн-система **EdTeach** (Claude Design, проект «Education platform wireframes»): токены и базовые классы.
+- `i18n/`: локализация (`vue-i18n`, composition-режим). См. раздел «Локализация» ниже.
+
+## Локализация (RU / KK)
+Языки: **қазақша** (`kk`, по умолчанию) и **русский** (`ru`, запасной — `fallbackLocale`). Третьего языка (EN) сейчас нет.
+- `i18n/index.ts` — настройка `createI18n`, хранение выбора в `localStorage` (`edu_locale`), `setLocale()` ставит `<html lang>`.
+- `i18n/locales/{kk,ru}.ts` — ключи сообщений, типизированные объекты (`as const`).
+- `stores/locale.ts` — Pinia-обёртка (`useLocaleStore`): `current`, `options`, `select(locale)`. Читает/пишет `i18n.global` напрямую (не `useI18n()`), потому что используется и вне компонентов (например, `utils/format.ts`).
+- `components/ui/LangSwitcher.vue` — переключатель ҚАЗ/RU (пропс `dark` для тёмного фона). Уже стоит в `AppLayout.vue` (шапка) и `AuthCard.vue` (страница входа/регистрации).
+- `utils/format.ts` → `roleLabel(role)` — название роли на текущем языке (`roles.<role>` в локалях). Старый `roleLabels` (всегда RU) помечен `@deprecated`, оставлен для мест, ещё не переведённых.
+- `layouts/navigation.ts` → `NavItem.labelKey` — ключ `nav.*`, не литеральный текст; в шаблоне `{{ $t(item.labelKey) }}`.
+
+**Текущий статус (2026-10):** сделана только инфраструктура и каркас (навигация, меню пользователя, вход/регистрация, названия ролей) — **полный перевод всех экранов ещё не сделан**, это следующий шаг. Остальные страницы (каталог, уроки, тесты, админка и т.д.) пока на литеральном русском.
+
+**Как переводить новый текст:** добавь ключ в оба файла `i18n/locales/{kk,ru}.ts` (не только в один — иначе `fallbackLocale` покажет русский для казахского), замени литерал в шаблоне на `{{ $t('раздел.ключ') }}` (или `:prop="$t(...)"` для атрибутов), для `<script setup>` — `const { t } = useI18n()`, вне компонентов — `i18n.global.t(...)` (как в `utils/format.ts`). Не переводи пользовательские данные с бэкенда (имена, названия курсов) — только статичный интерфейсный текст.
 
 ## Дизайн (EdTeach, вариант 1a вайрфреймов)
 - **Цвета только через токены**: `--color-primary` (зелёный `#00ed64`, CTA), `--surface-dark`/`--teal-900` (тёмные полосы), `--text-strong/secondary/tertiary`, `--border-default/strong`, `--surface-subtle/soft/feature`, `--warning-*`, `--error-*`. Новые цвета не хардкодить.

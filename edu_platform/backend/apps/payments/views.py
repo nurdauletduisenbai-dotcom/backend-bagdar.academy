@@ -124,7 +124,9 @@ class StripeWebhookView(APIView):
     @extend_schema(summary='Вебхук Stripe (вызывает Stripe, не клиент)', request=None, responses={200: None})
     def post(self, request):
         provider = PROVIDERS['stripe']
-        if not provider.is_configured():
+        if not provider.webhook_configured():
+            if provider.is_configured():
+                logger.error('Stripe webhook отклонён: задан STRIPE_SECRET_KEY, но не STRIPE_WEBHOOK_SECRET')
             return HttpResponse(status=404)
         try:
             event = provider.parse_webhook(request.body, request.headers.get('Stripe-Signature', ''))

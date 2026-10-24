@@ -1,0 +1,16 @@
+[Unit]
+Description=bagdar.academy — Celery worker
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+User=nur
+Group=nur
+WorkingDirectory=/home/nur/apps/backend-bagdar.academy/edu_platform/backend
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+ExecStart=/home/nur/apps/backend-bagdar.academy/venv/bin/celery -A config worker -l info --concurrency 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

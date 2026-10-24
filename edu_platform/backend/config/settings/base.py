@@ -158,6 +158,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': env('THROTTLE_AUTH_RATE', default='20/min'),
         'auth_refresh': env('THROTTLE_AUTH_REFRESH_RATE', default='60/min'),
+        'public_form': env('THROTTLE_PUBLIC_FORM_RATE', default='5/hour'),
     },
 }
 

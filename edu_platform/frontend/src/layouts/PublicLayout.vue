@@ -15,7 +15,7 @@ const links = [
   { to: { path: '/', hash: '#about' }, key: 'public.about' },
   { to: { path: '/', hash: '#courses' }, key: 'public.courses' },
   { to: { path: '/news' }, key: 'public.news' },
-  { to: { path: '/', hash: '#start' }, key: 'public.howItWorks' },
+  { to: { path: '/', hash: '#faq' }, key: 'public.faq' },
 ]
 
 watch(() => route.fullPath, () => (menuOpen.value = false))

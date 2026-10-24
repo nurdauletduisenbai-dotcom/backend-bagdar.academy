@@ -4,6 +4,15 @@ import { http } from './http'
 
 const data = <T>(p: Promise<{ data: T }>) => p.then((r) => r.data)
 
+export interface ContactRequestPayload {
+  name: string
+  phone: string
+  audience: 'student' | 'parent' | 'school'
+  message: string
+  language: string
+  consent: boolean
+}
+
 export interface NewsFilters {
   category?: NewsCategory
   page?: number
@@ -15,6 +24,7 @@ export const newsApi = {
   list: (params: NewsFilters = {}) => data(http.get<Paginated<NewsPost>>('/news/posts/', { params })),
   get: (slug: string) => data(http.get<NewsPostDetail>(`/news/posts/${encodeURIComponent(slug)}/`)),
   stats: () => data(http.get<PlatformStats>('/news/stats/')),
+  contact: (payload: ContactRequestPayload) => http.post('/news/contact/', payload),
 }
 
 /** Адрес обложки с учётом VITE_API_BASE_URL (бэкенд может жить на другом домене) */

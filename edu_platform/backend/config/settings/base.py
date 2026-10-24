@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'apps.notifications.apps.NotificationsConfig',
     'apps.payments.apps.PaymentsConfig',
     'apps.audit.apps.AuditConfig',
+    'apps.news.apps.NewsConfig',
 ]
 
 MIDDLEWARE = [
@@ -129,9 +130,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = env('DJANGO_STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT', default=str(BASE_DIR / 'media'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -157,6 +158,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': env('THROTTLE_AUTH_RATE', default='20/min'),
         'auth_refresh': env('THROTTLE_AUTH_REFRESH_RATE', default='60/min'),
+        'public_form': env('THROTTLE_PUBLIC_FORM_RATE', default='5/hour'),
     },
 }
 

@@ -8,6 +8,7 @@ export interface CourseFilters {
   search?: string
   type?: Course['type']
   status?: Course['status']
+  subject?: string
   page?: number
 }
 

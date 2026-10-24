@@ -1,0 +1,18 @@
+[Unit]
+Description=bagdar.academy — Django API (gunicorn)
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+User=nur
+Group=nur
+WorkingDirectory=/home/nur/apps/backend-bagdar.academy/edu_platform/backend
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+ExecStart=/home/nur/apps/backend-bagdar.academy/venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8000 --workers 3 --timeout 60 \
+    --access-logfile - --error-logfile -
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

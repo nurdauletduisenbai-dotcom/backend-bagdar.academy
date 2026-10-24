@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { authApi } from '@/api/auth'
 import { errorMessage } from '@/api/http'
 
 import AuthCard from './AuthCard.vue'
 
+// ?role=parent — с выбора роли на главной странице
+const presetRole = useRoute().query.role === 'parent' ? 'parent' : 'student'
 const form = reactive({
   email: '', password: '', first_name: '', last_name: '',
-  role: 'student' as 'student' | 'parent', org_slug: 'fizmat-school', is_minor: false, parent_consent: false,
+  role: presetRole as 'student' | 'parent', org_slug: 'fizmat-school', is_minor: false, parent_consent: false,
 })
 const error = ref('')
 const done = ref('')
@@ -51,8 +54,8 @@ async function onSubmit() {
       <label>Код школы (slug) <input v-model="form.org_slug" required /></label>
       <label class="inline"><input v-model="form.is_minor" type="checkbox" /> Мне меньше 14 лет</label>
       <label v-if="form.is_minor" class="inline"><input v-model="form.parent_consent" type="checkbox" /> Родитель согласен</label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button class="btn" :disabled="loading">Зарегистрироваться</button>
+      <p v-if="error" class="alert alert--error">{{ error }}</p>
+      <button class="btn btn--lg btn--block" :disabled="loading">Зарегистрироваться</button>
       <p class="small muted">Учителя и кураторы регистрируются по приглашению. <RouterLink to="/login">Уже есть аккаунт</RouterLink></p>
     </form>
   </AuthCard>

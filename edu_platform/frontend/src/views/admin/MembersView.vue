@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 
 import { orgsApi } from '@/api/orgs'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPager from '@/components/ui/AppPager.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StateBlock from '@/components/ui/StateBlock.vue'
@@ -43,12 +44,12 @@ async function addMember() {
 </script>
 
 <template>
-  <PageHeader title="Участники школы">
+  <PageHeader title="Участники">
     <button v-if="auth.isAdmin" class="btn btn--ghost" @click="addOpen = !addOpen">+ Существующий пользователь</button>
-    <RouterLink to="/admin/invites" class="btn">Пригласить нового</RouterLink>
+    <RouterLink to="/admin/invites" class="btn">+ Пригласить</RouterLink>
   </PageHeader>
 
-  <form v-if="addOpen" class="card row" style="margin-bottom: 16px" @submit.prevent="addMember">
+  <form v-if="addOpen" class="card row" style="margin-bottom: var(--space-lg)" @submit.prevent="addMember">
     <input v-model="add.email" type="email" placeholder="email зарегистрированного пользователя" style="max-width: 300px" required />
     <select v-model="add.role" style="max-width: 180px">
       <option v-for="(label, key) in roleLabels" :key="key" :value="key">{{ label }}</option>
@@ -56,24 +57,30 @@ async function addMember() {
     <button class="btn" :disabled="busy">Добавить</button>
   </form>
 
-  <form class="row" style="margin-bottom: 16px" @submit.prevent="apply">
-    <input v-model="filters.search" type="search" placeholder="Имя или email" style="max-width: 260px" />
-    <select v-model="filters.role" style="max-width: 200px" @change="apply">
-      <option value="">Все роли</option>
-      <option v-for="(label, key) in roleLabels" :key="key" :value="key">{{ label }}</option>
-    </select>
-    <button class="btn btn--ghost">Найти</button>
-  </form>
+  <div class="row row--between" style="margin-bottom: var(--space-lg)">
+    <div class="pills">
+      <button class="pill" :class="{ active: !filters.role }" @click="filters.role = ''; apply()">Все <span class="count">{{ filters.role ? '' : members.data.value?.total ?? '' }}</span></button>
+      <button class="pill" :class="{ active: filters.role === 'student' }" @click="filters.role = 'student'; apply()">Ученики</button>
+      <button class="pill" :class="{ active: filters.role === 'teacher' }" @click="filters.role = 'teacher'; apply()">Учителя</button>
+      <button class="pill" :class="{ active: filters.role === 'parent' }" @click="filters.role = 'parent'; apply()">Родители</button>
+      <button class="pill" :class="{ active: filters.role === 'curator' }" @click="filters.role = 'curator'; apply()">Кураторы</button>
+      <button class="pill" :class="{ active: filters.role === 'admin' }" @click="filters.role = 'admin'; apply()">Админы</button>
+      <RouterLink v-if="auth.isTeacher" to="/admin/invites" class="pill">Приглашения</RouterLink>
+    </div>
+    <form class="search" style="width: 260px" @submit.prevent="apply">
+      <AppIcon name="search" /><input v-model="filters.search" type="search" placeholder="Имя или email" aria-label="Поиск участников" />
+    </form>
+  </div>
 
   <StateBlock :loading="members.loading.value" :error="members.error.value" :empty="!members.data.value?.results.length" @retry="members.run">
-    <div class="card table-wrap">
+    <div class="card card--flush table-wrap">
       <table class="table">
         <thead><tr><th>Пользователь</th><th>Роль</th><th>С</th><th>Статус</th><th></th></tr></thead>
         <tbody>
           <tr v-for="m in members.data.value?.results ?? []" :key="m.id">
-            <td>{{ m.full_name }}<div class="muted small">{{ m.email }}</div></td>
+            <td><strong>{{ m.full_name }}</strong><div class="muted small">{{ m.email }}</div></td>
             <td>
-              <select v-if="auth.isAdmin" :value="m.role" style="max-width: 170px" @change="changeRole(m, ($event.target as HTMLSelectElement).value as Role)">
+              <select v-if="auth.isAdmin" :value="m.role" style="max-width: 170px; height: 36px" @change="changeRole(m, ($event.target as HTMLSelectElement).value as Role)">
                 <option v-for="(label, key) in roleLabels" :key="key" :value="key">{{ label }}</option>
               </select>
               <span v-else>{{ roleLabels[m.role] }}</span>
@@ -81,7 +88,7 @@ async function addMember() {
             <td class="small">{{ fmtDate(m.created_at) }}</td>
             <td><AppBadge :kind="m.is_active ? 'success' : 'default'">{{ m.is_active ? 'Активен' : 'Отключён' }}</AppBadge></td>
             <td>
-              <button v-if="auth.isAdmin && m.user !== auth.user?.id" class="btn btn--ghost btn--sm" :disabled="busy" @click="toggleActive(m)">
+              <button v-if="auth.isAdmin && m.user !== auth.user?.id" class="btn btn--text btn--sm" :disabled="busy" @click="toggleActive(m)">
                 {{ m.is_active ? 'Отключить' : 'Включить' }}
               </button>
             </td>

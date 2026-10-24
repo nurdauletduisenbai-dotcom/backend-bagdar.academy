@@ -11,3 +11,14 @@
 ```
 
 Быстрый старт: `cd edu_platform && make up`, подробности в [edu_platform/README.md](edu_platform/README.md).
+
+**Как всё устроено** (архитектура, роли, процессы, схемы): [edu_platform/docs/ARCHITECTURE.md](edu_platform/docs/ARCHITECTURE.md).
+
+## Ветки
+
+| Ветка | Назначение |
+|---|---|
+| `main` | стабильная версия на сервере, обновляется только релизом (PR из `develop`) |
+| `develop` | разработка — все изменения идут сюда |
+
+Как разрабатывать, выпускать релизы и делать срочные исправления: [edu_platform/docs/BRANCHING.md](edu_platform/docs/BRANCHING.md).

@@ -77,7 +77,13 @@ class StripeProvider(BaseProvider):
         if session.payment_intent:
             stripe.Refund.create(payment_intent=session.payment_intent)
 
+    def webhook_configured(self) -> bool:
+        # Без секрета подпись проверялась бы пустым ключом — её может подделать кто угодно
+        return self.is_configured() and bool(settings.STRIPE_WEBHOOK_SECRET)
+
     def parse_webhook(self, payload: bytes, signature: str):
+        if not settings.STRIPE_WEBHOOK_SECRET:
+            raise ValueError('STRIPE_WEBHOOK_SECRET не задан')
         stripe = self._client()
         return stripe.Webhook.construct_event(payload, signature, settings.STRIPE_WEBHOOK_SECRET)
 

@@ -23,7 +23,7 @@ PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,
-    'DEFAULT_THROTTLE_RATES': {'auth': '10000/min', 'auth_refresh': '10000/min'},
+    'DEFAULT_THROTTLE_RATES': {'auth': '10000/min', 'auth_refresh': '10000/min', 'public_form': '10000/min'},
 }
 
 # Загруженные в тестах файлы — во временный каталог

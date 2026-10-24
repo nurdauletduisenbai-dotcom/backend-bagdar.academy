@@ -73,6 +73,21 @@ class TestPayments:
         with mock.patch('apps.payments.providers.StripeProvider.parse_webhook', side_effect=ValueError('bad')):
             assert api.post('/api/v1/payments/webhooks/stripe/', {}).status_code == 400
 
+    def test_stripe_webhook_rejected_without_webhook_secret(self, api, make_user, org, paid_course, settings):
+        """Ключ API задан, а секрет вебхука нет — событие не принимается, заказ не оплачивается."""
+        settings.STRIPE_SECRET_KEY = 'sk_test_x'
+        settings.STRIPE_WEBHOOK_SECRET = ''
+        student = make_user('s@a.kz', 'student', org)
+        order = Order.objects.create(user=student, course=paid_course, amount=15000, provider='stripe',
+                                     idempotency_key='k', provider_ref='cs_test_1')
+        payload = {'type': 'checkout.session.completed',
+                   'data': {'object': {'id': 'cs_test_1', 'payment_status': 'paid',
+                                       'metadata': {'order_id': str(order.id)}}}}
+        res = api.post('/api/v1/payments/webhooks/stripe/', payload, format='json', HTTP_STRIPE_SIGNATURE='t=1,v1=x')
+        assert res.status_code == 404
+        order.refresh_from_db()
+        assert order.status != 'paid'
+
 
 @pytest.mark.django_db
 class TestParentsAndProgress:

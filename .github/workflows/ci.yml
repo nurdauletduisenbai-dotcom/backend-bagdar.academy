@@ -4,9 +4,21 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
+  # В main (версию на сервере) можно вливать только develop (релиз) или hotfix/* (срочный фикс)
+  release-source:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
+        run: |
+          case "${{ github.head_ref }}" in
+            develop|hotfix/*) echo "OK: ${{ github.head_ref }} -> main" ;;
+            *) echo "::error::В main можно вливать только develop или hotfix/*, а не '${{ github.head_ref }}'. Сначала влейте изменения в develop."; exit 1 ;;
+          esac
+
   backend:
     runs-on: ubuntu-latest
     defaults:

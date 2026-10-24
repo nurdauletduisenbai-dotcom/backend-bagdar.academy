@@ -1,11 +1,18 @@
+import { i18n } from '@/i18n'
 import type { Role } from '@/types/api'
 
+/** @deprecated используйте {@link roleLabel} — учитывает текущий язык (RU/KK) */
 export const roleLabels: Record<Role, string> = {
   admin: 'Администратор',
   teacher: 'Учитель',
   curator: 'Куратор',
   student: 'Ученик',
   parent: 'Родитель',
+}
+
+/** Название роли на текущем языке интерфейса (i18n-ключ `roles.<role>`) */
+export function roleLabel(role: Role): string {
+  return i18n.global.t(`roles.${role}`)
 }
 
 export const courseTypeLabels: Record<string, string> = {
@@ -110,3 +117,29 @@ export function toLocalInput(v?: string | null) {
 
 /** Значение <input type="datetime-local"> -> ISO-строка с часовым поясом */
 export const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null)
+
+const TAG_TONES = ['', 'purple', 'orange', 'blue', 'pink', 'teal'] as const
+
+/** Цвет тега категории (CategoryTag) по названию предмета — стабильно для одного предмета */
+export function subjectTone(subject?: string | null): string {
+  if (!subject) return ''
+  let h = 0
+  for (const ch of subject.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  const tone = TAG_TONES[h % TAG_TONES.length]
+  return tone ? `tag--${tone}` : ''
+}
+
+const KK_MONTHS = ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым',
+  'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан']
+const ruLongDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+
+/**
+ * «24 қазан 2026 ж.» / «24 октября 2026 г.» — дата на текущем языке интерфейса.
+ * Казахские месяцы — вручную: во многих браузерах в Intl нет данных kk (выходит «2026 M10 24»).
+ */
+export function fmtDateLong(v?: string | null): string {
+  if (!v) return '—'
+  const d = new Date(v)
+  if (i18n.global.locale.value === 'kk') return `${d.getDate()} ${KK_MONTHS[d.getMonth()]} ${d.getFullYear()} ж.`
+  return ruLongDate.format(d)
+}

@@ -603,3 +603,32 @@ export interface AuditLog {
   entity_id: ID | null
   changes: Record<string, unknown>
 }
+
+// ---------- Новости платформы (публично) ----------
+export type NewsCategory = 'news' | 'article' | 'event' | 'update'
+
+export interface NewsPost {
+  id: ID
+  slug: string
+  title: string
+  category: NewsCategory
+  category_label: string
+  summary: string
+  /** Путь к публичной обложке (/api/v1/news/posts/<slug>/cover/) или null */
+  cover_url: string | null
+  is_pinned: boolean
+  published_at: string
+}
+
+export interface NewsPostDetail extends NewsPost {
+  body: string
+  author_name: string
+  updated_at: string
+}
+
+export interface PlatformStats {
+  courses: number
+  students: number
+  teachers: number
+  schools: number
+}

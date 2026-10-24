@@ -29,7 +29,7 @@ async function onSubmit() {
       totp_code: totpCode.value || undefined,
     })
     if (!needs2fa.value) {
-      router.push(typeof route.query.next === 'string' ? route.query.next : '/')
+      router.push(typeof route.query.next === 'string' ? route.query.next : '/home')
     }
   } catch (e) {
     error.value = errorMessage(e)

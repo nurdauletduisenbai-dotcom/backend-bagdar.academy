@@ -15,7 +15,8 @@ student1@fizmat.kz / StudentPassword123!, parent@fizmat.kz / ParentPassword123!.
 - `stores/`: Pinia, setup-синтаксис. `auth` — пользователь, роли в текущей организации (`hasRole`, `isAdmin`, `isTeacher`, `isStaff`, `isStudent`, `isParent`), `switchOrg()`. `toast` — уведомления на экране. `notifications` — счётчик непрочитанных (опрос раз в 30 с).
 - `composables/useAsync.ts`: `useAsync(fn)` — загрузка с `loading/error/data/run`; `useAction()` — `act(fn, 'Успех')` для кнопок (блокировка повторного нажатия + тосты).
 - `composables/useYouTubeProgress.ts`: отправка прогресса просмотра видео через YouTube IFrame API.
-- `layouts/AppLayout.vue` + `layouts/navigation.ts`: боковое меню, пункты фильтруются по ролям.
+- `layouts/AppLayout.vue` + `layouts/navigation.ts`: кабинет (верхнее меню), пункты фильтруются по ролям. Главная кабинета — **`/home`**.
+- `layouts/PublicLayout.vue` + `views/public/`: публичный сайт без входа — `/` (лендинг: о платформе, новости, курсы, «как начать»; вошедшего перекидывает на `/home`), `/news`, `/news/:slug`. В шапке «Войти»/«Регистрация». Новости — `api/news.ts` (`/news/posts/`, `/news/stats/`), их ведёт суперпользователь в Django admin («Новости и статьи»). Текст поста — обычный текст, абзацы через пустую строку (без `v-html`).
 - `router/index.ts`: `meta.public`, `meta.roles` — доступ к страницам по ролям.
 - `components/ui/`: `AppModal`, `AppPager`, `AppBadge`, `StateBlock` (загрузка/ошибка/пусто), `PageHeader`, `ProgressBar`, `ToastHost`, `MathText` (формулы `$…$` через KaTeX).
 - `views/`: `auth/`, `courses/`, `tests/`, `assignments/`, `progress/`, `teach/` (учитель), `admin/`; общие страницы — в корне.

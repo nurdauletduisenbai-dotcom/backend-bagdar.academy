@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/v1/progress/', include('apps.progress.urls')),
     path('api/v1/payments/', include('apps.payments.urls')),
     path('api/v1/audit/', include('apps.audit.urls')),
+    path('api/v1/news/', include('apps.news.urls')),
     path('api/v1/', include('apps.content.urls')),
     path('api/v1/', include('apps.questions.urls')),
     path('api/v1/', include('apps.assignments.urls')),

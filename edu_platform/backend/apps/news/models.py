@@ -69,3 +69,30 @@ class Post(TimeStampedModel):
         while Post.objects.filter(slug=slug).exclude(pk=self.pk).exists():
             slug, n = f'{base}-{n}', n + 1
         return slug
+
+
+class ContactRequest(TimeStampedModel):
+    """Заявка с публичной главной («Остались вопросы?»): менеджер перезванивает."""
+
+    class Audience(models.TextChoices):
+        STUDENT = 'student', 'Ученик'
+        PARENT = 'parent', 'Родитель'
+        SCHOOL = 'school', 'Школа / учебный центр'
+
+    name = models.CharField('Имя', max_length=120)
+    phone = models.CharField('Телефон', max_length=32)
+    audience = models.CharField('Кто обращается', max_length=20, choices=Audience.choices,
+                                default=Audience.STUDENT)
+    message = models.TextField('Вопрос', max_length=2000, blank=True)
+    language = models.CharField('Язык сайта', max_length=5, blank=True)
+    is_processed = models.BooleanField('Обработана', default=False)
+    manager_note = models.TextField('Заметка менеджера', blank=True)
+
+    class Meta:
+        db_table = 'contact_requests'
+        ordering = ['is_processed', '-created_at']
+        verbose_name = 'Заявка с сайта'
+        verbose_name_plural = 'Заявки с сайта'
+
+    def __str__(self):
+        return f'{self.name} · {self.phone}'

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import mock
 from urllib.parse import quote
 
 import pytest
@@ -74,3 +75,36 @@ class TestPublicNews:
         res = api.get('/api/v1/news/stats/')
         assert res.status_code == 200
         assert res.data['students'] == 1 and res.data['teachers'] == 1 and res.data['schools'] >= 1
+
+
+@pytest.mark.django_db
+class TestContactRequest:
+    URL = '/api/v1/news/contact/'
+
+    def test_guest_can_leave_request(self, api):
+        from apps.news.models import ContactRequest
+
+        res = api.post(self.URL, {'name': 'Айгерим', 'phone': '+7 (701) 123-45-67', 'audience': 'parent',
+                                  'message': 'Есть ли курсы для 9 класса?', 'language': 'kk', 'consent': True})
+        assert res.status_code == 201
+        req = ContactRequest.objects.get()
+        assert req.audience == 'parent' and req.language == 'kk' and not req.is_processed
+
+    def test_requires_consent_and_valid_phone(self, api):
+        res = api.post(self.URL, {'name': 'Айгерим', 'phone': '12', 'consent': False})
+        assert res.status_code == 400
+        details = res.data['error']['details']
+        assert 'phone' in details and 'consent' in details
+
+    def test_rate_limited_per_ip(self, api, settings):
+        from django.core.cache import cache
+        from rest_framework.throttling import ScopedRateThrottle
+
+        cache.clear()
+        rates = {**ScopedRateThrottle.THROTTLE_RATES, 'public_form': '2/hour'}
+        with mock.patch.object(ScopedRateThrottle, 'THROTTLE_RATES', rates):
+            payload = {'name': 'Тест', 'phone': '+77011234567', 'consent': True}
+            assert api.post(self.URL, payload).status_code == 201
+            assert api.post(self.URL, payload).status_code == 201
+            assert api.post(self.URL, payload).status_code == 429
+        cache.clear()

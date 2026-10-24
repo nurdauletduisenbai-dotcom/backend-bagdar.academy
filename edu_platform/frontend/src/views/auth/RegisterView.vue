@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { authApi } from '@/api/auth'
 import { errorMessage } from '@/api/http'
 
 import AuthCard from './AuthCard.vue'
 
+// ?role=parent — с выбора роли на главной странице
+const presetRole = useRoute().query.role === 'parent' ? 'parent' : 'student'
 const form = reactive({
   email: '', password: '', first_name: '', last_name: '',
-  role: 'student' as 'student' | 'parent', org_slug: 'fizmat-school', is_minor: false, parent_consent: false,
+  role: presetRole as 'student' | 'parent', org_slug: 'fizmat-school', is_minor: false, parent_consent: false,
 })
 const error = ref('')
 const done = ref('')

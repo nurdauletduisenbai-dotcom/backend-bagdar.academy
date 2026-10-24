@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post
+from .models import ContactRequest, Post
 
 
 @admin.register(Post)
@@ -19,3 +19,16 @@ class PostAdmin(admin.ModelAdmin):
         if not obj.author_id:
             obj.author = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ContactRequest)
+class ContactRequestAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'audience', 'language', 'is_processed', 'created_at')
+    list_filter = ('is_processed', 'audience', 'language')
+    list_editable = ('is_processed',)
+    search_fields = ('name', 'phone', 'message')
+    readonly_fields = ('name', 'phone', 'audience', 'message', 'language', 'created_at')
+    fields = ('name', 'phone', 'audience', 'language', 'message', 'created_at', 'is_processed', 'manager_note')
+
+    def has_add_permission(self, request):
+        return False  # заявки приходят только с сайта

@@ -2,14 +2,15 @@ import mimetypes
 
 from django.http import FileResponse
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .models import Post
-from .serializers import PlatformStatsSerializer, PostDetailSerializer, PostListSerializer
+from .serializers import ContactRequestSerializer, PlatformStatsSerializer, PostDetailSerializer, PostListSerializer
 
 
 @extend_schema_view(
@@ -68,3 +69,19 @@ class PlatformStatsView(APIView):
             'schools': Organization.objects.filter(is_active=True).count(),
         }
         return Response(PlatformStatsSerializer(data).data)
+
+
+@extend_schema(tags=['news'])
+class ContactRequestView(APIView):
+    """Заявка с главной страницы. Без входа; не чаще THROTTLE_PUBLIC_FORM_RATE с одного IP."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'public_form'
+
+    @extend_schema(summary='Оставить заявку (публично)', request=ContactRequestSerializer, responses={201: None})
+    def post(self, request):
+        serializer = ContactRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_201_CREATED)

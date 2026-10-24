@@ -1,8 +1,10 @@
+import re
+
 from django.urls import reverse
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import Post
+from .models import ContactRequest, Post
 
 
 class PostListSerializer(serializers.ModelSerializer):
@@ -36,3 +38,35 @@ class PlatformStatsSerializer(serializers.Serializer):
     students = serializers.IntegerField()
     teachers = serializers.IntegerField()
     schools = serializers.IntegerField()
+
+
+class ContactRequestSerializer(serializers.ModelSerializer):
+    consent = serializers.BooleanField(write_only=True, help_text='Согласие на обработку персональных данных')
+
+    class Meta:
+        model = ContactRequest
+        fields = ('name', 'phone', 'audience', 'message', 'language', 'consent')
+
+    def validate_phone(self, value):
+        digits = re.sub(r'\D', '', value)
+        if not 10 <= len(digits) <= 15:
+            raise serializers.ValidationError('Укажите номер телефона, например +7 700 000 00 00.')
+        return value.strip()
+
+    def validate_name(self, value):
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError('Укажите имя.')
+        return value
+
+    def validate_language(self, value):
+        return value if value in ('kk', 'ru') else ''
+
+    def validate_consent(self, value):
+        if not value:
+            raise serializers.ValidationError('Нужно согласие на обработку персональных данных.')
+        return value
+
+    def create(self, validated_data):
+        validated_data.pop('consent')
+        return super().create(validated_data)

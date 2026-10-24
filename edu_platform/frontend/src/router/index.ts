@@ -28,12 +28,23 @@ const routes: RouteRecordRaw[] = [
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/auth/ResetPasswordView.vue'), meta: { public: true, title: 'Новый пароль' } },
   { path: '/verify-email', name: 'verify-email', component: () => import('@/views/auth/VerifyEmailView.vue'), meta: { public: true, title: 'Подтверждение email' } },
 
+  // ---------- Публичный сайт: главная с новостями (вошедших главная перекидывает в кабинет /home) ----------
+  {
+    path: '/',
+    component: () => import('@/layouts/PublicLayout.vue'),
+    children: [
+      { path: '', name: 'landing', component: () => import('@/views/public/LandingView.vue'), meta: { public: true, guestOnly: true, title: 'bagdar.academy' } },
+      { path: 'news', name: 'news', component: () => import('@/views/public/NewsListView.vue'), meta: { public: true, title: 'Новости' } },
+      { path: 'news/:slug', name: 'news-post', component: () => import('@/views/public/PostView.vue'), props: true, meta: { public: true, title: 'Новости' } },
+    ],
+  },
+
   // ---------- Приложение ----------
   {
     path: '/',
     component: () => import('@/layouts/AppLayout.vue'),
     children: [
-      { path: '', name: 'home', component: () => import('@/views/HomeView.vue'), meta: { title: 'Главная' } },
+      { path: 'home', name: 'home', component: () => import('@/views/HomeView.vue'), meta: { title: 'Главная' } },
       { path: 'catalog', name: 'catalog', component: () => import('@/views/CoursesView.vue'), meta: { title: 'Каталог' } },
       { path: 'my-courses', name: 'my-courses', component: () => import('@/views/courses/MyCoursesView.vue'), meta: { title: 'Мои курсы' } },
       { path: 'courses/:id', name: 'course', component: () => import('@/views/courses/CourseView.vue'), props: true, meta: { title: 'Курс' } },
@@ -79,7 +90,8 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior: () => ({ top: 0 }),
+  // Якоря главной (#about, #courses…) — плавная прокрутка; отступ задаёт scroll-margin-top секции
+  scrollBehavior: (to) => (to.hash ? { el: to.hash, behavior: 'smooth' } : { top: 0 }),
 })
 
 router.beforeEach((to) => {

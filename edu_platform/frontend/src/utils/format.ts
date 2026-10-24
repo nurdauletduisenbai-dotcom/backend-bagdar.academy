@@ -128,3 +128,18 @@ export function subjectTone(subject?: string | null): string {
   const tone = TAG_TONES[h % TAG_TONES.length]
   return tone ? `tag--${tone}` : ''
 }
+
+const KK_MONTHS = ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым',
+  'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан']
+const ruLongDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+
+/**
+ * «24 қазан 2026 ж.» / «24 октября 2026 г.» — дата на текущем языке интерфейса.
+ * Казахские месяцы — вручную: во многих браузерах в Intl нет данных kk (выходит «2026 M10 24»).
+ */
+export function fmtDateLong(v?: string | null): string {
+  if (!v) return '—'
+  const d = new Date(v)
+  if (i18n.global.locale.value === 'kk') return `${d.getDate()} ${KK_MONTHS[d.getMonth()]} ${d.getFullYear()} ж.`
+  return ruLongDate.format(d)
+}

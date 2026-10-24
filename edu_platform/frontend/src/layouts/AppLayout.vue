@@ -38,7 +38,7 @@ const roleText = computed(() => auth.roles.map((r) => roleLabel(r)).join(', ') |
 /** Активен самый «длинный» подходящий пункт: на /admin/orders горит «Оплаты», а не «Сводка» (/admin) */
 const activeTo = computed(() => {
   const all = [...top.value, ...more.value].map((i) => i.to)
-  const matches = all.filter((to) => (to === '/' ? route.path === '/' : route.path === to || route.path.startsWith(`${to}/`)))
+  const matches = all.filter((to) => (route.path === to || route.path.startsWith(`${to}/`)))
   return matches.sort((a, b) => b.length - a.length)[0] ?? null
 })
 
@@ -51,7 +51,7 @@ async function onOrgChange(event: Event) {
   await auth.switchOrg(orgId)
   toast.info(`Организация: ${auth.currentOrg?.name}`)
   menuOpen.value = false
-  router.push('/')
+  router.push('/home')
 }
 
 async function onLogout() {
@@ -81,7 +81,7 @@ onUnmounted(() => {
   <header class="topnav">
     <div class="topnav__inner">
       <button class="icon-btn burger" aria-label="Меню" @click="mobileOpen = !mobileOpen"><AppIcon name="menu" /></button>
-      <RouterLink to="/" class="brand">bagdar<span class="brand__dot">.</span></RouterLink>
+      <RouterLink to="/home" class="brand">bagdar<span class="brand__dot">.</span></RouterLink>
 
       <nav class="topnav__links" :class="{ open: mobileOpen }">
         <RouterLink v-for="item in top" :key="item.to" :to="item.to" class="topnav__link" :class="{ active: isActive(item.to) }">

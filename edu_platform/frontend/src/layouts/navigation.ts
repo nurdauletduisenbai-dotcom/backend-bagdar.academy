@@ -14,33 +14,33 @@ export interface NavItem {
  */
 const topByRole: Record<Role, NavItem[]> = {
   admin: [
-    { to: '/', labelKey: 'nav.home' },
+    { to: '/home', labelKey: 'nav.home' },
     { to: '/admin', labelKey: 'nav.summary' },
     { to: '/teach/courses', labelKey: 'nav.courses' },
     { to: '/admin/members', labelKey: 'nav.members' },
     { to: '/admin/orders', labelKey: 'nav.orders' },
   ],
   teacher: [
-    { to: '/', labelKey: 'nav.home' },
+    { to: '/home', labelKey: 'nav.home' },
     { to: '/teach/courses', labelKey: 'nav.myCourses' },
     { to: '/schedule', labelKey: 'nav.schedule' },
     { to: '/teach/submissions', labelKey: 'nav.submissions' },
     { to: '/teach/questions', labelKey: 'nav.questionBank' },
   ],
   curator: [
-    { to: '/', labelKey: 'nav.home' },
+    { to: '/home', labelKey: 'nav.home' },
     { to: '/teach/courses', labelKey: 'nav.courses' },
     { to: '/schedule', labelKey: 'nav.schedule' },
     { to: '/admin/members', labelKey: 'nav.students' },
   ],
   parent: [
-    { to: '/', labelKey: 'nav.home' },
+    { to: '/home', labelKey: 'nav.home' },
     { to: '/children', labelKey: 'nav.children' },
     { to: '/schedule', labelKey: 'nav.schedule' },
     { to: '/catalog', labelKey: 'nav.catalog' },
   ],
   student: [
-    { to: '/', labelKey: 'nav.home' },
+    { to: '/home', labelKey: 'nav.home' },
     { to: '/my-courses', labelKey: 'nav.catalog' },
     { to: '/schedule', labelKey: 'nav.schedule' },
     { to: '/assignments', labelKey: 'nav.assignments' },
@@ -73,7 +73,7 @@ export const allItems: NavItem[] = [
 
 export function topLinks(roles: Role[]): NavItem[] {
   const main = ROLE_PRIORITY.find((r) => roles.includes(r))
-  return main ? topByRole[main] : [{ to: '/', labelKey: 'nav.home' }, { to: '/catalog', labelKey: 'nav.catalog' }]
+  return main ? topByRole[main] : [{ to: '/home', labelKey: 'nav.home' }, { to: '/catalog', labelKey: 'nav.catalog' }]
 }
 
 export function menuLinks(roles: Role[]): NavItem[] {
